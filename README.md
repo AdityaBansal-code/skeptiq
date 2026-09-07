@@ -84,6 +84,13 @@ The worker's simulation pipeline is a **no-op stub** that walks a job through
 every status with delays (see decision-log D18). Real persona generation,
 reactions, clustering, cross-talk, and synthesis land in Phase 2.
 
-Remaining Phase 1 steps (see the end of `docs/decision-log.md`): apply the
-migration, fill the env files, confirm a hand-inserted `queued` job walks to
-`completed` live in the browser, then deploy.
+Remaining Phase 1 steps are a copy-paste checklist in
+[`docs/phase-1-verification.md`](docs/phase-1-verification.md): apply the
+migration, fill the env files, confirm a `queued` job walks to `completed` live
+in the browser, then deploy.
+
+Test the worker in isolation (no web app) once a user exists:
+
+```bash
+pnpm --filter worker enqueue "A ₹150/day tiffin subscription for hostel students"
+```

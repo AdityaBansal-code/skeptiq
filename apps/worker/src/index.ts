@@ -1,3 +1,5 @@
+import "./loadEnv.js"; // must be first — populates process.env before ./env.ts runs
+
 import { claimNextJob, completeJob, failJob } from "./claimJob.js";
 import { pool } from "./db.js";
 import { env } from "./env.js";
@@ -32,7 +34,11 @@ async function main(): Promise<void> {
       await tick();
     } catch (err) {
       // A failure in the claim/poll path itself (e.g. DB blip) — log and keep going.
-      logger.error("tick error", { error: err instanceof Error ? err.message : String(err) });
+      const message = err instanceof Error ? err.message : String(err);
+      const hint = /ENOTFOUND|ENETUNREACH/.test(message)
+        ? "DNS/route failure — if this is db.<ref>.supabase.co, that host is IPv6-only; use the Session pooler connection string instead."
+        : undefined;
+      logger.error("tick error", { error: message, ...(hint ? { hint } : {}) });
     }
     if (!shuttingDown) await sleep(env.WORKER_POLL_INTERVAL_MS);
   }
