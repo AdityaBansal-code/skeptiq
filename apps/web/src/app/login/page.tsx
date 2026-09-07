@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginForm() {
+  const urlError = useSearchParams().get("error");
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,12 +26,13 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto max-w-sm px-6 py-24">
+    <>
       <h1 className="text-lg font-semibold">Sign in</h1>
+      {urlError ? (
+        <p className="mt-4 rounded-md bg-red-50 p-2 text-sm text-red-700">{urlError}</p>
+      ) : null}
       {sent ? (
-        <p className="mt-4 text-sm text-neutral-600">
-          Check your email for a sign-in link.
-        </p>
+        <p className="mt-4 text-sm text-neutral-600">Check your email for a sign-in link.</p>
       ) : (
         <form onSubmit={onSubmit} className="mt-6 space-y-3">
           <input
@@ -50,6 +53,16 @@ export default function LoginPage() {
           </button>
         </form>
       )}
+    </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <main className="mx-auto max-w-sm px-6 py-24">
+      <Suspense fallback={<h1 className="text-lg font-semibold">Sign in</h1>}>
+        <LoginForm />
+      </Suspense>
     </main>
   );
 }

@@ -33,13 +33,21 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     },
   );
 
+  const { pathname, searchParams } = request.nextUrl;
+
+  // If Supabase's redirect URL config points at the site root instead of
+  // /auth/confirm, the magic link lands here with ?code=... — forward it.
+  if (searchParams.has("code") && !pathname.startsWith("/auth/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/confirm";
+    return NextResponse.redirect(url);
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-  const isPublic =
-    pathname.startsWith("/login") || pathname.startsWith("/auth");
+  const isPublic = pathname.startsWith("/login") || pathname.startsWith("/auth");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
