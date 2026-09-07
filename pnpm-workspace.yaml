@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Native deps we trust to run install scripts (pnpm blocks these by default
+# since v10). esbuild backs `tsx` (worker); @tailwindcss/oxide is Tailwind v4's
+# engine (web); sharp is Next's image optimizer. See docs/decision-log.md D11.
+onlyBuiltDependencies:
+  - esbuild
+  - "@tailwindcss/oxide"
+  - sharp
