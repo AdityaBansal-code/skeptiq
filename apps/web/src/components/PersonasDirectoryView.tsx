@@ -138,11 +138,6 @@ export function PersonasDirectoryView({
                     <div><dt className="font-medium text-muted-ink">Bias and friction</dt><dd className="text-ink">{[p.cognitiveBias, p.switchingFriction].filter(Boolean).join(" · ") || "Not recorded"}</dd></div>
                     <div><dt className="font-medium text-muted-ink">Cluster</dt><dd className="text-ink">{p.clusterLabel || "Not clustered"}</dd></div>
                   </dl>
-                  {p.quote && (
-                    <div className="rounded-xl bg-stone-50 p-2.5 text-xs text-stone-600 italic border border-stone-100 line-clamp-3">
-                      "{p.quote}"
-                    </div>
-                  )}
                 </div>
 
                 <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-400">

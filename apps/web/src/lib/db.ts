@@ -89,7 +89,6 @@ export interface PersonaItem {
   priceBandMax: number | null;
   status: string;
   objection: string | null;
-  quote: string | null;
   relationshipToIdea: string | null;
   currentAlternative: string | null;
   cognitiveBias: string | null;
@@ -185,20 +184,12 @@ export async function getUserDashboardData(userId: string): Promise<{
       `SELECT p.id, p.job_id, p.profile, p.status, p.created_at,
               i.raw_text as idea_text,
               coalesce(r.summary_json->>'headline', left(i.raw_text, 88)) as simulation_label,
-              c.label as cluster_label,
-              t.content as quote
+              c.label as cluster_label
          FROM personas p
          JOIN simulation_jobs j ON j.id = p.job_id
          JOIN ideas i ON i.id = j.idea_id
          LEFT JOIN reports r ON r.job_id = j.id
          LEFT JOIN clusters c ON c.id = p.cluster_id
-         LEFT JOIN LATERAL (
-           SELECT content
-             FROM turns
-            WHERE persona_id = p.id
-            ORDER BY created_at DESC
-            LIMIT 1
-         ) t ON true
         WHERE j.user_id = $1
         ORDER BY p.created_at DESC
         LIMIT 150`,
@@ -219,15 +210,14 @@ export async function getUserDashboardData(userId: string): Promise<{
             : prof.demographics?.occupation || prof.archetype || "Market Evaluator",
         archetype: prof.archetype || "Market Evaluator",
         technicalLevel: prof.technicalLevel || "intermediate",
-        relevanceTag: prof.targetRelevance || prof.relationshipToIdea ? "Evaluator" : "Target Buyer",
+        relevanceTag: prof.targetRelevance || "Not specified",
         priceBandMax: prof.priceBandMax != null ? Number(prof.priceBandMax) : null,
         status: p.status,
         objection: Array.isArray(prof.wouldSayNoIf) ? prof.wouldSayNoIf.join("; ") : null,
-        quote: p.quote || (Array.isArray(prof.caresAbout) ? `Values: ${prof.caresAbout.join(", ")}` : null),
         relationshipToIdea: prof.relationshipToIdea || prof.targetRelevance || null,
         currentAlternative: prof.currentAlternative || null,
         cognitiveBias: prof.cognitiveBias || null,
-        switchingFriction: prof.switchingFriction || prof.unvoicedReservation || null,
+        switchingFriction: prof.switchingFriction || null,
         clusterLabel: p.cluster_label || null,
         createdAt: p.created_at?.toISOString?.() || String(p.created_at),
       };
@@ -241,6 +231,7 @@ export async function getUserDashboardData(userId: string): Promise<{
          JOIN simulation_jobs j ON j.id = r.job_id
          JOIN ideas i ON i.id = j.idea_id
         WHERE j.user_id = $1
+          AND j.status = 'completed'
         ORDER BY r.generated_at DESC`,
       [userId]
     );
