@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: `${brandConfig.name} · ${brandConfig.descriptor}`,
   description:
-    "Submit an idea; a panel of AI personas reacts independently, debates, and returns a segmented market-reaction report.",
+    "Simulate autonomous AI focus groups to stress-test venture ideas, pricing, and adoption before building.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
