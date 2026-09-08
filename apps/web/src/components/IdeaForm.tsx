@@ -194,6 +194,9 @@ export function IdeaForm() {
                   {size}
                 </button>
               ))}
+              <label htmlFor="panel-size" className="sr-only">
+                Custom panel size
+              </label>
               <input
                 id="panel-size"
                 type="number"
