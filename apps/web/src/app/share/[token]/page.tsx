@@ -18,6 +18,8 @@ interface PublicJobData {
   report_summary: ReportSummary | null;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicReportPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   if (!token) notFound();

@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { JobLiveView, type JobRow } from "@/components/JobLiveView";
 import { AppShell } from "@/components/AppShell";
 
+export const dynamic = "force-dynamic";
+
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
