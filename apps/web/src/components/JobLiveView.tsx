@@ -247,6 +247,8 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
 
   const currentStep = STEPS.indexOf(job.status as (typeof STEPS)[number]);
   const terminal = isTerminal(job.status);
+  const completed = job.status === "completed";
+  const cancelled = job.status === "failed" && job.error?.toLowerCase().includes("cancelled") === true;
 
   // Filtered turns for dialogue tab
   const filteredTurns = useMemo(() => {
@@ -365,16 +367,26 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
               <span className="h-2 w-2 rounded-full bg-blue-600 animate-ping" />
               Live Simulation In Progress
             </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-semibold">
+          ) : cancelled ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+              <span aria-hidden="true">⏹</span>
+              Simulation Cancelled
+            </span>
+          ) : completed ? (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
               ✓ Simulation Completed
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700">
+              <span aria-hidden="true">!</span>
+              Simulation Failed
             </span>
           )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
           {STEPS.map((step, i) => {
-            const done = terminal || (currentStep >= 0 && i < currentStep);
+            const done = completed || (currentStep >= 0 && i < currentStep);
             const active = !terminal && job.status === step;
             return (
               <div
@@ -410,8 +422,8 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
 
       {/* Error state */}
       {job.status === "failed" && (
-        <div className="rounded-2xl bg-red-50 p-5 text-sm text-red-700 border border-red-200 shadow-sm">
-          <p className="font-bold">Simulation Failed</p>
+        <div className={`rounded-2xl border p-5 text-sm shadow-sm ${cancelled ? "border-amber-200 bg-amber-50 text-amber-800" : "border-red-200 bg-red-50 text-red-700"}`}>
+          <p className="font-bold">{cancelled ? "Simulation Cancelled" : "Simulation Failed"}</p>
           <p className="mt-1 font-mono text-xs">{job.error ?? "Unknown error occurred"}</p>
         </div>
       )}
@@ -458,7 +470,7 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
           </span>
         </button>
 
-        {terminal && personas.size > 0 && (
+        {completed && personas.size > 0 && (
           <button
             onClick={() => setActiveTab("chat")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -1043,7 +1055,7 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
       )}
 
       {/* TAB 3: INTERACTIVE CROSS-EXAMINE */}
-      {activeTab === "chat" && terminal && personas.size > 0 && (
+      {activeTab === "chat" && completed && personas.size > 0 && (
         <PanelChat
           jobId={job.id}
           personas={Array.from(personas.values()).map((p) => ({

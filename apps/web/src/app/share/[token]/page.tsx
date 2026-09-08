@@ -13,6 +13,7 @@ interface PublicJobData {
   debate_level: string | null;
   share_token: string;
   created_at: string;
+  error: string | null;
   idea_description: string;
   report_summary: ReportSummary | null;
 }
@@ -22,7 +23,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
   if (!token) notFound();
 
   const jobRes = await pool.query<PublicJobData>(
-    `SELECT j.id, j.status, j.mode, j.panel_size, j.rounds, j.debate_level, j.share_token, j.created_at,
+    `SELECT j.id, j.status, j.mode, j.panel_size, j.rounds, j.debate_level, j.share_token, j.created_at, j.error,
             i.raw_text as idea_description,
             r.summary_json as report_summary
      FROM simulation_jobs j
@@ -68,6 +69,8 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
   );
 
   const report = job.report_summary;
+  const completed = job.status === "completed";
+  const cancelled = job.status === "failed" && job.error?.toLowerCase().includes("cancelled") === true;
 
   return (
     <div className="min-h-screen bg-paper px-4 py-8 text-ink sm:px-6">
@@ -78,10 +81,16 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             <p className="text-xs font-semibold tracking-wide text-muted-ink">
               {brandConfig.mark} {brandConfig.name} · Public report
             </p>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200/60">
-                ✓ Verified Focus Group Simulation
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {completed ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200/60">
+                  ✓ Completed simulation report
+                </span>
+              ) : (
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold border ${cancelled ? "border-amber-200/60 bg-amber-50 text-amber-800" : job.status === "failed" ? "border-red-200/60 bg-red-50 text-red-700" : "border-blue-200/60 bg-blue-50 text-blue-700"}`}>
+                  {cancelled ? "Simulation cancelled" : job.status === "failed" ? "Simulation failed" : "Simulation in progress"}
+                </span>
+              )}
               <span className="text-xs text-zinc-400">
                 {new Date(job.created_at).toLocaleDateString(undefined, {
                   month: "short",
@@ -121,6 +130,10 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
           </div>
         </div>
 
+        <div className="border border-butter bg-butter/40 px-4 py-3 text-xs leading-5 text-ink">
+          <strong>Synthetic research caveat:</strong> This report is generated from simulated personas, not a recruited or representative human sample. Treat it as directional input for further validation, not as proof of market demand.
+        </div>
+
         {/* Pitch Summary Box */}
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Proposed Venture Proposition</p>
@@ -135,7 +148,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
         </div>
 
         {/* Executive Verdict & Summary */}
-        {report && (
+        {completed && report ? (
           <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
               <div className="space-y-1.5">
@@ -354,7 +367,11 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
               </div>
             )}
           </div>
-        )}
+        ) : !completed ? (
+          <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600">
+            This public report is not available yet because the simulation has not completed.
+          </div>
+        ) : null}
 
         {/* Cross-Examinations */}
         {crossExamsRes.rows.length > 0 && (
