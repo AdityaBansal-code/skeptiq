@@ -120,6 +120,9 @@ export function AppShell({ userEmail, children }: AppShellProps) {
               <NavLink key={item.href} {...item} compact />
             ))}
           </nav>
+          <div className="mt-3 flex justify-end">
+            <SignOutButton className="justify-center" />
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">{children}</main>
