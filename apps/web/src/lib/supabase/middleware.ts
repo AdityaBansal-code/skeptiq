@@ -7,6 +7,7 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
 /**
  * Refreshes the Supabase session on every request and gates the app: an
  * unauthenticated user hitting any non-public route is bounced to /login.
+ * The landing page is intentionally public.
  * Magic-link auth, no password (architecture §8).
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
@@ -47,7 +48,10 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublic = pathname.startsWith("/login") || pathname.startsWith("/auth");
+  const isPublic =
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/auth");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
