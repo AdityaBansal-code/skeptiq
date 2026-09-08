@@ -51,7 +51,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/share");
+    pathname === "/share" ||
+    pathname.startsWith("/share/");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
