@@ -10,8 +10,16 @@ const envSchema = z.object({
   /** How often to poll simulation_jobs for queued work. */
   WORKER_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(2000),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
-  /** Unused in Phase 1; required once the Phase 2 pipeline lands. */
-  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  /** Groq API Key for running multi-agent LLM inference. Free from https://console.groq.com */
+  GROQ_API_KEY: z.preprocess(
+    (val) => (typeof val === "string" && val.trim() === "" ? undefined : val),
+    z.string().min(1).optional()
+  ),
+  /** Optional OpenRouter API Key for free multi-provider model fallback. */
+  OPENROUTER_API_KEY: z.preprocess(
+    (val) => (typeof val === "string" && val.trim() === "" ? undefined : val),
+    z.string().min(1).optional()
+  ),
 });
 
 export const env = envSchema.parse(process.env);

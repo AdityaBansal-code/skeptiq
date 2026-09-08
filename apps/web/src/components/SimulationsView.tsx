@@ -54,7 +54,7 @@ export function SimulationsView({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.04em] text-ink sm:text-3xl">
-            Simulation archive
+            Archive
           </h1>
           <p className="mt-1 text-sm text-muted-ink">
             Review every run, its current state, and the branches it produced.
@@ -74,7 +74,9 @@ export function SimulationsView({
         {/* Search Input */}
         <div className="relative flex-1 min-w-[240px]">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-ink text-xs">⌕</span>
+          <label htmlFor="simulation-search" className="sr-only">Search simulations</label>
           <input
+            id="simulation-search"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -88,12 +90,13 @@ export function SimulationsView({
           {[
             { id: "all", label: `All (${simulations.length})` },
             { id: "completed", label: "Completed" },
-            { id: "active", label: "In Progress" },
+            { id: "active", label: "In progress" },
             { id: "failed", label: "Failed" },
             { id: "branched", label: "Branches" },
           ].map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setStatusFilter(tab.id as any)}
               className={`min-h-10 rounded-xl px-3 text-xs font-semibold whitespace-nowrap transition-colors ${
                 statusFilter === tab.id

@@ -1,96 +1,77 @@
-# AI Idea Validation Platform
+# 🍦 Autonomous Market Validation Platform
 
-Submit an idea → a panel of AI personas reacts independently, debates the
-objections in structured rounds → you get a **segmented** market-reaction report
-(who adopts, who rejects, why — a distribution, not a single score) plus the full
-transcript.
-
-Planning & reasoning lives in [`docs/`](docs/):
-
-| Doc | What it is |
-|---|---|
-| [`docs/ai-validation-platform-plan.md`](docs/ai-validation-platform-plan.md) | Product & research — the *why*, the bias-mitigation literature, the cost model |
-| [`docs/full-system-architecture.md`](docs/full-system-architecture.md) | Architecture — every major decision argued out |
-| [`docs/phase-wise-project-plan.md`](docs/phase-wise-project-plan.md) | Build order, tech stack, per-phase exit criteria |
-| [`docs/decision-log.md`](docs/decision-log.md) | Implementation-level decisions made while building |
-| [`docs/phase-0-validation-run.md`](docs/phase-0-validation-run.md) | The by-hand Phase 0 validation run |
+An autonomous, multi-agent focus group simulation engine that subjects product and startup ideas to multi-persona adversarial deliberation, market reconnaissance, behavioral cognitive bias stress-testing, and Van Westendorp Price Sensitivity Metering (PSM) at **$0 operational cost**.
 
 ---
 
-## Layout
+## 🎯 Architecture & Capabilities
+
+1. **Market Reconnaissance (Step 0)**: Scrapes competitive intelligence and substitute solutions via a multi-endpoint fallback engine ($0 cost) or deep parametric research.
+2. **Autonomous Persona Generation & Cognitive Biases (Step 1)**: Generates psychologically grounded personas with explicit behavioral traits (`loss_aversion`, `status_quo_bias`, `sunk_cost_fallacy`, `switching_friction`, `budget_gatekeeper`, `early_adopter_optimist`) and audience presets (`b2b_saas_enterprise`, `gen_z_creator`, `smb_owners`, `developer_tools`, `healthcare_bio`).
+3. **Independent Reactions & PSM (Step 2)**: Collects unprimed reactions, private unspoken reservations, and Van Westendorp 4-point price sensitivity data (`tooCheap`, `bargain`, `expensive`, `tooExpensive`). Embeds reactions via local ONNX.
+4. **Auto-$k$ Silhouette Clustering (Step 3)**: Discovers natural consumer market segments using in-memory Euclidean distance and Silhouette Score evaluation.
+5. **Dynamic Focus Group Cross-Talk (Step 4)**: Executes structured multi-stage deliberation (5, 12, or 24 rounds) with internal monologues and cross-cluster debate.
+6. **Synthesis & A/B Pivot Delta (Step 5)**: Computes optimal price points (OPP/IPP), acceptable pricing bands, and A/B adoption shifts ($\Delta$) if branched from a parent idea.
+7. **Founder Cross-Examination (`/api/chat`)**: Interactive Q&A with synthetic personas primed with their exact simulation history.
+8. **Investor & Founder Export API (`/api/export/[id]`)**: Instant Markdown Dossiers (`.md`) and raw `.json` downloads.
+
+---
+
+## 🏗️ Monorepo Layout
 
 ```
 apps/
-  web/        Next.js 15 (App Router) — UI, magic-link auth, thin server actions, Realtime
-  worker/     Node + tsx — the simulation pipeline + Postgres job-queue loop
+  web/        Next.js 15 (App Router) — Interactive dashboard, Live Realtime Stepper, Cross-Examination Q&A, Export API
+  worker/     Node + tsx — Multi-agent pipeline, Groq + OpenRouter cascade, Health/Metrics HTTP server (:3001)
 packages/
-  shared/     zod schemas + TS types shared by web and worker (ships raw .ts, no build)
+  shared/     Zod schemas, Van Westendorp PSM models, and TypeScript types shared across apps
 supabase/
-  migrations/ hand-written SQL: schema, RLS, Realtime publication
+  migrations/ Consolidated idempotent SQL: schema, RLS, heartbeat indexes, atomic job creation RPC
 ```
-
-Four runtime pieces (architecture §0): **web** (Vercel) · **Postgres/Auth/Realtime**
-(Supabase) · **worker** (Railway/Fly) · **Anthropic API**.
 
 ---
 
-## Prerequisites
+## 🔑 Environment Setup
 
-- Node ≥ 20 (repo pins 22 via `.nvmrc`; deploy targets use LTS)
-- pnpm 11 (`corepack enable`)
-- A Supabase project
-
-## Setup
-
+### 1. Worker Environment: `apps/worker/.env`
 ```bash
-pnpm install
-
-# 1. Apply the schema to your Supabase project
-#    Supabase dashboard → SQL Editor → paste supabase/migrations/20260907120000_init.sql
-#    (or: supabase db push, if you use the CLI)
-
-# 2. Web env
-cp apps/web/.env.example apps/web/.env.local
-#    fill NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
-#    (Supabase dashboard → Project Settings → API)
-
-# 3. Worker env
-cp apps/worker/.env.example apps/worker/.env
-#    fill DATABASE_URL (Project Settings → Database → Connection string → URI, port 5432)
+DATABASE_URL=postgresql://postgres.<ref>:<PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres
+GROQ_API_KEY=gsk_...
+# Optional free OpenRouter backup
+OPENROUTER_API_KEY=sk-or-v1-...
+WORKER_POLL_INTERVAL_MS=2000
+LOG_LEVEL=info
 ```
 
-## Run (local)
-
+### 2. Web App Environment: `apps/web/.env.local`
 ```bash
-pnpm dev:web       # http://localhost:3000
-pnpm dev:worker    # polls simulation_jobs, walks jobs through the pipeline
+NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+DATABASE_URL=postgresql://postgres.<ref>:<PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres
+GROQ_API_KEY=gsk_...
+OPENROUTER_API_KEY=sk-or-v1-...
 ```
 
-## Checks
+---
+
+## 🚀 Running Locally
 
 ```bash
-pnpm typecheck     # all three packages
+# Start Web UI (http://localhost:3000)
+pnpm dev:web
+
+# Start Worker Engine & Health Server (http://localhost:3001/health)
+pnpm dev:worker
+```
+
+---
+
+## 🧪 Verification & Checks
+
+```bash
+# Typecheck entire monorepo
+pnpm typecheck
+
+# Build Next.js Web App
 pnpm --filter web build
-pnpm format        # prettier
-```
-
----
-
-## Status
-
-**Phase 1 (infrastructure skeleton) — code complete, not yet wired to live services.**
-
-The worker's simulation pipeline is a **no-op stub** that walks a job through
-every status with delays (see decision-log D18). Real persona generation,
-reactions, clustering, cross-talk, and synthesis land in Phase 2.
-
-Remaining Phase 1 steps are a copy-paste checklist in
-[`docs/phase-1-verification.md`](docs/phase-1-verification.md): apply the
-migration, fill the env files, confirm a `queued` job walks to `completed` live
-in the browser, then deploy.
-
-Test the worker in isolation (no web app) once a user exists:
-
-```bash
-pnpm --filter worker enqueue "A ₹150/day tiffin subscription for hostel students"
 ```

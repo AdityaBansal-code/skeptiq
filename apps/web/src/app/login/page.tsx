@@ -126,10 +126,11 @@ function LoginForm() {
       ) : (
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-ink">
+            <label htmlFor="login-email" className="mb-1.5 block text-xs font-semibold text-ink">
               Email address
             </label>
             <input
+              id="login-email"
               type="email"
               required
               value={email}
@@ -141,10 +142,11 @@ function LoginForm() {
 
           {mode === "password" && (
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-ink">
+              <label htmlFor="login-password" className="mb-1.5 block text-xs font-semibold text-ink">
                 Password
               </label>
               <input
+                id="login-password"
                 type="password"
                 required
                 value={password}
@@ -156,7 +158,7 @@ function LoginForm() {
           )}
 
           {error && (
-            <div className="border border-coral bg-paper p-3 text-xs font-medium text-ink">
+            <div role="alert" className="border border-coral bg-paper p-3 text-xs font-medium text-ink">
               {error}
             </div>
           )}
@@ -171,7 +173,7 @@ function LoginForm() {
               : mode === "password"
               ? authAction === "signUp"
                 ? "Create Account & Get Started"
-                : "Sign In to Ice-cream"
+                : "Sign in"
               : "Send Magic Link"}
           </button>
 

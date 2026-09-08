@@ -103,8 +103,8 @@ export function IdeaForm() {
           className="w-full resize-y rounded-2xl border border-stone-200 bg-stone-50/50 p-4 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 outline-none focus:border-stone-900 focus:bg-white focus:ring-1 focus:ring-stone-900 transition-all shadow-2xs leading-relaxed"
         />
         <div className="flex items-center justify-between text-[11px] text-stone-400">
-          <span>Include target price point & key features for the most accurate Van Westendorp pricing curves.</span>
-          <span>{ideaText.length} chars</span>
+          <span>Include a target price and key features to give the panel useful context.</span>
+          <span aria-live="polite">{ideaText.length} characters</span>
         </div>
       </div>
 
@@ -172,9 +172,9 @@ export function IdeaForm() {
           {/* Panel Size */}
           <div className="rounded-2xl border border-stone-200/80 bg-stone-50/50 p-3.5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-stone-700">Panel Size</span>
+              <span className="text-xs font-semibold text-stone-700">Panel size</span>
               <span className="text-xs font-bold text-stone-900 bg-white px-2 py-0.5 rounded-lg border border-stone-200">
-                {panelSize} Personas
+                {panelSize} personas
               </span>
             </div>
 
@@ -256,7 +256,7 @@ export function IdeaForm() {
           className="text-xs font-semibold text-stone-600 hover:text-stone-900 flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <span className="text-[10px]">{showAdvanced ? "▼" : "▶"}</span>
-          <span>Advanced Engine Tuning (Deterministic Seed, Webhooks & Analysis Mode)</span>
+          <span>Advanced options (seed, webhook, and analysis mode)</span>
         </button>
 
         {showAdvanced && (
@@ -308,7 +308,7 @@ export function IdeaForm() {
                 className="w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs text-stone-900 placeholder:text-stone-400 shadow-2xs outline-none focus:border-stone-900"
               />
               <p className="mt-1 text-[11px] text-stone-500">
-                Dispatches an HMAC SHA-256 signed JSON payload upon simulation completion.
+                  Sends a signed JSON payload when this simulation completes.
               </p>
             </div>
           </div>
@@ -334,7 +334,7 @@ export function IdeaForm() {
             </>
           ) : (
             <>
-              <span>Launch Synthetic Focus Group</span>
+              <span>Start simulation</span>
               <span className="text-base">&rarr;</span>
             </>
           )}

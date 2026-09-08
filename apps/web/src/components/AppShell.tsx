@@ -112,7 +112,7 @@ export function AppShell({ userEmail, children }: AppShellProps) {
               className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-coral px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-coral/85 motion-reduce:transition-none"
             >
               <span aria-hidden="true">+</span>
-              New
+              New simulation
             </Link>
           </div>
           <nav aria-label="Workspace" className="mt-3 -mx-1 flex gap-1 overflow-x-auto pb-1">

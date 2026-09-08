@@ -50,7 +50,7 @@ export function PersonasDirectoryView({
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-stone-800 transition-all"
         >
           <span className="text-sm font-bold">+</span>
-          <span>Generate New Cohort</span>
+          <span>New simulation</span>
         </button>
       </div>
 
@@ -58,7 +58,9 @@ export function PersonasDirectoryView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#eee9e2] bg-white p-3 shadow-2xs">
         <div className="relative flex-1 min-w-[240px]">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs">🔍</span>
+          <label htmlFor="persona-search" className="sr-only">Search personas</label>
           <input
+            id="persona-search"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

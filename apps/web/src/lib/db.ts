@@ -14,6 +14,10 @@ export const pool =
     max: process.env.NODE_ENV === "production" ? 3 : 2,
     idleTimeoutMillis: 15_000,
     connectionTimeoutMillis: 8_000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000,
+    statement_timeout: 30_000,
+    query_timeout: 30_000,
   });
 
 pool.on("error", (err) => {

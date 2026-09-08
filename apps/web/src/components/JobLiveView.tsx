@@ -338,8 +338,9 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
                 <BranchModal parentJobId={job.id} originalIdeaText={ideaText || ""} />
               </>
             ) : !terminal ? (
-              <button
-                onClick={handleCancel}
+                <button
+                  type="button"
+                  onClick={handleCancel}
                 disabled={cancelling}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 transition-colors shadow-2xs cursor-pointer"
               >
@@ -430,8 +431,11 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
 
       {/* 3. Navigation Tabs */}
       <div className="flex items-center gap-1.5 border-b border-zinc-200 pb-1 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab("dossier")}
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === "dossier"}
+                  onClick={() => setActiveTab("dossier")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "dossier"
               ? "bg-zinc-900 text-white shadow-xs"
@@ -443,6 +447,9 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
         </button>
 
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "dialogue"}
           onClick={() => setActiveTab("dialogue")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "dialogue"
@@ -457,6 +464,9 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
         </button>
 
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "personas"}
           onClick={() => setActiveTab("personas")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "personas"
@@ -472,6 +482,9 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
 
         {completed && personas.size > 0 && (
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "chat"}
             onClick={() => setActiveTab("chat")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === "chat"
@@ -941,7 +954,9 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
               </div>
 
               {/* Persona Filter */}
-              <select
+                <label htmlFor="dialogue-persona-filter" className="sr-only">Filter dialogue by persona</label>
+                <select
+                id="dialogue-persona-filter"
                 value={selectedPersonaFilter}
                 onChange={(e) => setSelectedPersonaFilter(e.target.value)}
                 className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-800 outline-none"
@@ -955,7 +970,9 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
               </select>
 
               {/* Search input */}
+              <label htmlFor="dialogue-search" className="sr-only">Search dialogue</label>
               <input
+                id="dialogue-search"
                 type="text"
                 placeholder="Search dialogue…"
                 value={dialogueSearch}

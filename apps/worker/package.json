@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "@repo/shared": "workspace:*",
+    "@xenova/transformers": "^2.17.2",
     "dotenv": "^16.4.7",
+    "groq-sdk": "^1.6.0",
+    "ml-kmeans": "^7.0.1",
     "pg": "^8.13.1",
     "zod": "^3.24.1"
   },
