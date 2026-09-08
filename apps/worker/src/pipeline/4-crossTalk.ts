@@ -1,6 +1,7 @@
 import { chatCompletion, GROQ_MODELS, TokenTracker } from "../ai/groq.js";
 import { pool } from "../db.js";
 import { logger } from "../logger.js";
+import { touchHeartbeat } from "../claimJob.js";
 import type { PersonaRecord } from "./1-generatePersonas.js";
 import type { IndependentReaction } from "./2-independentReactions.js";
 import type { ClusterRecord } from "./3-clustering.js";
@@ -69,6 +70,7 @@ export async function runCrossTalk(
         roundNumber,
       };
       turns.push(record);
+      await touchHeartbeat(jobId);
       return record;
     } catch (err) {
       logger.warn("failed to record crosstalk turn", { error: String(err) });

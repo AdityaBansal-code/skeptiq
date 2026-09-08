@@ -113,6 +113,24 @@ export async function generatePersonas(
 
   logger.info("generating personas", { jobId, panelSize, audiencePreset, hasMarketContext: !!marketContext });
 
+  // Re-use already created personas if this stage is resuming from a crash recovery
+  const existing = await pool.query<{ id: string; profile: PersonaProfile; system_prompt: string }>(
+    `SELECT id, profile, system_prompt FROM personas WHERE job_id = $1 ORDER BY id ASC`,
+    [jobId]
+  );
+  if (existing.rows.length >= panelSize) {
+    logger.info("reusing existing personas for job", { jobId, count: existing.rows.length });
+    return existing.rows.slice(0, panelSize).map((r) => ({
+      id: r.id,
+      job_id: jobId,
+      profile: typeof r.profile === "string" ? JSON.parse(r.profile) : r.profile,
+      system_prompt: r.system_prompt,
+    }));
+  }
+
+  // Clear any partial personas from previous failed attempts
+  await pool.query(`DELETE FROM personas WHERE job_id = $1`, [jobId]);
+
   const marketBlock = marketContext
     ? `\nCOMPETITIVE MARKET REALITY:
 - Top competitors/incumbents in this space: ${marketContext.topCompetitors.join(", ")}

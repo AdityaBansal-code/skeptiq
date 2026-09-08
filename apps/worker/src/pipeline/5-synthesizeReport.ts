@@ -190,11 +190,12 @@ export async function synthesizeReport(
     )
   );
 
-  // 4. Build transcript digest
+  // 4. Build transcript digest (safely capped for max panel and round sizes)
   const clusterSummaries = clusters
     .map((c) => {
       const clusterReactions = reactions
         .filter((r) => c.personaIds.includes(r.personaId))
+        .slice(0, 3)
         .map((r) => `  - "${r.content}" (by ${r.personaName})`)
         .join("\n");
       return `### Segment: ${c.label} (${c.size} personas, ${Math.round((c.size / (personas.length || 1)) * 100)}% of panel)
@@ -205,6 +206,7 @@ ${clusterReactions}`;
     .join("\n\n");
 
   const crossTalkDigest = crossTalkTurns
+    .slice(-20)
     .map((t) => {
       const p = personaMap.get(t.personaId);
       return `Round ${t.roundNumber} - ${p?.profile.name || "Participant"} (${p?.profile.archetype || "User"}): "${t.content}"`;

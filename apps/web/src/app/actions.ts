@@ -11,6 +11,25 @@ export interface CreateJobState {
 }
 
 /**
+ * Pings the background worker health endpoint (if configured) to wake it up on Render/serverless hosts.
+ */
+function wakeWorkerIfNeeded(): void {
+  const workerUrl = process.env.WORKER_HEALTH_URL || process.env.NEXT_PUBLIC_WORKER_URL;
+  if (!workerUrl) return;
+  try {
+    const url = workerUrl.endsWith("/health") ? workerUrl : `${workerUrl.replace(/\/+$/, "")}/health`;
+    void fetch(url, {
+      method: "GET",
+      signal: AbortSignal.timeout(3500),
+    }).catch(() => {
+      // Best-effort background ping; do not block user flow
+    });
+  } catch {
+    // Ignore error
+  }
+}
+
+/**
  * Server action behind the homepage form: validate → call atomic Postgres stored procedure →
  * redirect to the live job page. Runs in a single atomic transaction.
  */
@@ -70,6 +89,7 @@ export async function createJobAction(
     const createdId = rows[0]?.create_simulation_job_atomic;
     if (!createdId) throw new Error("Job creation failed to return an ID");
     jobId = createdId;
+    wakeWorkerIfNeeded();
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("createJobAction error:", errMsg);
@@ -133,6 +153,7 @@ export async function createQuickSimulationAction(
 
     const createdId = rows[0]?.create_simulation_job_atomic;
     if (!createdId) throw new Error("Failed to create simulation job.");
+    wakeWorkerIfNeeded();
     return { ok: true, jobId: createdId };
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -203,6 +224,7 @@ export async function branchJobAction(
     const createdId = rows[0]?.create_simulation_job_atomic;
     if (!createdId) throw new Error("Branch creation failed to return an ID");
     jobId = createdId;
+    wakeWorkerIfNeeded();
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("branchJobAction error:", errMsg);

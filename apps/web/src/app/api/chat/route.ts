@@ -157,10 +157,40 @@ export async function POST(request: Request) {
       [jobId, rawPersona.id]
     );
 
-    // 5. Query Groq / OpenRouter
+    // 5. If backend worker is configured, delegate chat directly to worker (zero AI keys on frontend)
+    const workerBaseUrl =
+      process.env.WORKER_URL ||
+      process.env.WORKER_HEALTH_URL ||
+      process.env.NEXT_PUBLIC_WORKER_URL;
+
+    if (workerBaseUrl) {
+      const cleanWorkerUrl = workerBaseUrl.replace(/\/health\/?$/, "").replace(/\/+$/, "");
+      try {
+        const workerRes = await fetch(`${cleanWorkerUrl}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jobId,
+            personaId: rawPersona.id,
+            question: question.trim(),
+            userId: user.id,
+          }),
+          signal: AbortSignal.timeout(25000),
+        });
+
+        if (workerRes.ok) {
+          const workerData = await workerRes.json();
+          return NextResponse.json(workerData);
+        }
+      } catch (workerErr) {
+        console.warn("Worker chat delegate attempt failed, falling back to local...", workerErr);
+      }
+    }
+
+    // 6. Local LLM fallback (if keys are present on web runtime)
     const groqApiKey = process.env.GROQ_API_KEY;
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-    if (!groqApiKey && !openRouterApiKey) {
+    if (!groqApiKey && !openRouterApiKey && !workerBaseUrl) {
       return NextResponse.json({ error: "AI service not configured" }, { status: 503 });
     }
 

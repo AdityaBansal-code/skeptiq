@@ -111,8 +111,8 @@ export async function reapStaleJobs(): Promise<number> {
            completed_at = case when attempt_count >= 3 then now() else completed_at end
      where status not in ('queued', 'completed', 'failed')
        and (
-         heartbeat_at < now() - interval '5 minutes'
-         or (started_at is not null and started_at < now() - interval '90 minutes')
+         heartbeat_at < now() - interval '15 minutes'
+         or (started_at is not null and started_at < now() - interval '120 minutes')
        )
   `);
   return rowCount ?? 0;
@@ -155,7 +155,15 @@ export async function getStageCheckpoints(jobId: string): Promise<Record<string,
 }
 
 export async function cleanStageArtifacts(jobId: string, stage: string): Promise<void> {
-  if (stage === "independent_phase") {
+  if (stage === "market_recon") {
+    await pool.query(`UPDATE simulation_jobs SET market_context = NULL WHERE id = $1`, [jobId]);
+  } else if (stage === "generating_personas") {
+    await pool.query(`DELETE FROM cross_examinations WHERE job_id = $1`, [jobId]);
+    await pool.query(`DELETE FROM turns WHERE job_id = $1`, [jobId]);
+    await pool.query(`DELETE FROM clusters WHERE job_id = $1`, [jobId]);
+    await pool.query(`DELETE FROM reports WHERE job_id = $1`, [jobId]);
+    await pool.query(`DELETE FROM personas WHERE job_id = $1`, [jobId]);
+  } else if (stage === "independent_phase") {
     await pool.query(`DELETE FROM turns WHERE job_id = $1 AND phase = 'independent'`, [jobId]);
     await pool.query(`UPDATE personas SET status = 'pending' WHERE job_id = $1`, [jobId]);
   } else if (stage === "clustering") {

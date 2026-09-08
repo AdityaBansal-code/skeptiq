@@ -3,6 +3,7 @@ import { jsonCompletion, GROQ_MODELS, TokenTracker } from "../ai/groq.js";
 import { embedText } from "../ai/embedding.js";
 import { pool } from "../db.js";
 import { logger } from "../logger.js";
+import { touchHeartbeat } from "../claimJob.js";
 import type { PersonaRecord } from "./1-generatePersonas.js";
 import type { VanWestendorpPricing } from "@repo/shared";
 
@@ -171,6 +172,7 @@ Provide your candid evaluation and Van Westendorp Price Sensitivity points in JS
     for (const res of chunkResults) {
       if (res) reactions.push(res);
     }
+    await touchHeartbeat(jobId);
   }
 
   // Ensure we have a critical mass of reactions
