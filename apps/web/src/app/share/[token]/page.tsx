@@ -104,22 +104,26 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={`/api/export/${job.share_token}?format=markdown`}
-              download
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-2xs hover:bg-zinc-50 hover:border-zinc-300 transition-all"
-              title="Download Markdown Dossier"
-            >
-              <span>📥 Dossier (.md)</span>
-            </a>
-            <a
-              href={`/api/export/${job.share_token}?format=json`}
-              download
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-2xs hover:bg-zinc-50 hover:border-zinc-300 transition-all"
-              title="Export Raw Data JSON"
-            >
-              <span>JSON</span>
-            </a>
+            {completed && (
+              <>
+                <a
+                  href={`/api/export/${job.share_token}?format=markdown`}
+                  download
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-2xs hover:bg-zinc-50 hover:border-zinc-300 transition-all"
+                  title="Download Markdown Dossier"
+                >
+                  <span>📥 Dossier (.md)</span>
+                </a>
+                <a
+                  href={`/api/export/${job.share_token}?format=json`}
+                  download
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-2xs hover:bg-zinc-50 hover:border-zinc-300 transition-all"
+                  title="Export Raw Data JSON"
+                >
+                  <span>JSON</span>
+                </a>
+              </>
+            )}
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-zinc-800 transition-all"
@@ -368,13 +372,17 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             )}
           </div>
         ) : !completed ? (
-          <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600">
-            This public report is not available yet because the simulation has not completed.
+          <div className={`rounded-2xl border p-6 text-sm ${cancelled ? "border-amber-200 bg-amber-50 text-amber-800" : job.status === "failed" ? "border-red-200 bg-red-50 text-red-700" : "border-dashed border-zinc-200 bg-white text-zinc-600"}`}>
+            {cancelled
+              ? `This simulation was cancelled${job.error ? `: ${job.error}` : "."}`
+              : job.status === "failed"
+              ? `This simulation failed${job.error ? `: ${job.error}` : "."}`
+              : "This public report is not available yet because the simulation has not completed."}
           </div>
         ) : null}
 
         {/* Cross-Examinations */}
-        {crossExamsRes.rows.length > 0 && (
+        {completed && crossExamsRes.rows.length > 0 && (
           <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-4">
             <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
               <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-800">Founder Cross-Examinations</h2>
@@ -400,6 +408,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
         )}
 
         {/* Focus Group Transcript */}
+        {completed && (
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-4">
           <div className="border-b border-zinc-100 pb-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-800">
@@ -469,6 +478,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             })}
           </div>
         </div>
+        )}
 
         {/* Footer CTA */}
         <div className="rounded-2xl bg-zinc-900 p-8 text-center text-white space-y-3 shadow-sm">
