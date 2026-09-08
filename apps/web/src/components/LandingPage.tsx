@@ -44,7 +44,7 @@ export function LandingPage() {
             Sign in
           </Link>
           <Link
-            className="rounded-lg bg-coral px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-[#e97a70]"
+            className="rounded-lg bg-coral px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-coral/85"
             href="/login"
           >
             Start with an idea
@@ -64,7 +64,7 @@ export function LandingPage() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
-              className="inline-flex justify-center rounded-lg bg-coral px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-[#e97a70]"
+              className="inline-flex justify-center rounded-lg bg-coral px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-coral/85"
               href="/login"
             >
               Start a simulation
@@ -134,7 +134,7 @@ export function LandingPage() {
             </p>
           </div>
           <Link
-            className="inline-flex justify-center rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-paper transition-colors hover:bg-stone-700"
+            className="inline-flex justify-center rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
             href="/login"
           >
             Bring an idea
