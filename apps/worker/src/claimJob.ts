@@ -111,7 +111,7 @@ export async function reapStaleJobs(): Promise<number> {
            completed_at = case when attempt_count >= 3 then now() else completed_at end
      where status not in ('queued', 'completed', 'failed')
        and (
-         heartbeat_at < now() - interval '15 minutes'
+         heartbeat_at < now() - interval '2 minutes'
          or (started_at is not null and started_at < now() - interval '120 minutes')
        )
   `);
