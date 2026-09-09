@@ -364,7 +364,7 @@ export async function GET(
     }
 
     md += `---\n\n`;
-    md += `*Generated automatically by Ice-cream Autonomous Market Validation Platform*\n`;
+    md += `*Generated automatically by Skeptiq Autonomous Market Validation Platform*\n`;
 
     return new NextResponse(md, {
       status: 200,

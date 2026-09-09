@@ -277,7 +277,7 @@ Guidelines for this conversation:
               Authorization: `Bearer ${openRouterApiKey}`,
               "Content-Type": "application/json",
               "HTTP-Referer": "http://localhost:3000",
-              "X-Title": "Ice-cream Focus Group",
+              "X-Title": "Skeptiq Focus Group",
             },
             body: JSON.stringify({
               model,
