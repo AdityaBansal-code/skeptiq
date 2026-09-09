@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { ReportsWorkspaceView } from "@/components/AppWorkspaceViews";
-import { getUserDashboardData } from "@/lib/db";
+import { getUserReports } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ReportsPage() {
@@ -11,6 +11,6 @@ export default async function ReportsPage() {
 
   if (!user) redirect("/login");
 
-  const { reports } = await getUserDashboardData(user.id);
+  const reports = await getUserReports(user.id);
   return <ReportsWorkspaceView reports={reports} />;
 }

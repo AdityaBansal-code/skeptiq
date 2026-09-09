@@ -118,14 +118,8 @@ export interface ReportItem {
   createdAt: string;
 }
 
-export async function getUserDashboardData(userId: string): Promise<{
-  simulations: SimulationJobSummary[];
-  analytics: DashboardAnalytics;
-  personas: PersonaItem[];
-  reports: ReportItem[];
-}> {
+export async function getUserSimulations(userId: string): Promise<SimulationJobSummary[]> {
   try {
-    // 1. Fetch simulation jobs with ideas and reports (extracting summary_json)
     const jobsRes = await pool.query(
       `SELECT j.id, j.idea_id, j.status, j.mode, j.panel_size, j.audience_preset,
               j.rounds, j.debate_level, j.parent_job_id, j.branch_label, j.share_token,
@@ -142,7 +136,7 @@ export async function getUserDashboardData(userId: string): Promise<{
       [userId]
     );
 
-    const simulations: SimulationJobSummary[] = jobsRes.rows.map((r) => {
+    return jobsRes.rows.map((r) => {
       const summary = r.summary_json || {};
       const low = summary.overallAdoptionLow != null ? Number(summary.overallAdoptionLow) : null;
       const high = summary.overallAdoptionHigh != null ? Number(summary.overallAdoptionHigh) : null;
@@ -182,8 +176,14 @@ export async function getUserDashboardData(userId: string): Promise<{
         priceSensitivity: summary.priceSensitivity || null,
       };
     });
+  } catch (err) {
+    console.error("[getUserSimulations error]", err);
+    return [];
+  }
+}
 
-    // 2. Fetch personas across user jobs (extracting profile jsonb)
+export async function getUserPersonas(userId: string): Promise<PersonaItem[]> {
+  try {
     const personasRes = await pool.query(
       `SELECT p.id, p.job_id, p.profile, p.status, p.created_at,
               i.raw_text as idea_text,
@@ -200,7 +200,7 @@ export async function getUserDashboardData(userId: string): Promise<{
       [userId]
     );
 
-    const personas: PersonaItem[] = personasRes.rows.map((p) => {
+    return personasRes.rows.map((p) => {
       const prof = p.profile || {};
       return {
         id: p.id,
@@ -226,8 +226,14 @@ export async function getUserDashboardData(userId: string): Promise<{
         createdAt: p.created_at?.toISOString?.() || String(p.created_at),
       };
     });
+  } catch (err) {
+    console.error("[getUserPersonas error]", err);
+    return [];
+  }
+}
 
-    // 3. Fetch reports list
+export async function getUserReports(userId: string): Promise<ReportItem[]> {
+  try {
     const reportsRes = await pool.query(
       `SELECT r.id, r.job_id, r.summary_json, r.generated_at,
               j.share_token, i.raw_text as idea_text
@@ -240,7 +246,7 @@ export async function getUserDashboardData(userId: string): Promise<{
       [userId]
     );
 
-    const reports: ReportItem[] = reportsRes.rows.map((r) => {
+    return reportsRes.rows.map((r) => {
       const summary = r.summary_json || {};
       return {
         id: r.id,
@@ -263,8 +269,27 @@ export async function getUserDashboardData(userId: string): Promise<{
         createdAt: r.generated_at?.toISOString?.() || String(r.generated_at),
       };
     });
+  } catch (err) {
+    console.error("[getUserReports error]", err);
+    return [];
+  }
+}
 
-    // 4. Calculate 100% REAL aggregated statistics
+export async function getUserDashboardData(userId: string): Promise<{
+  simulations: SimulationJobSummary[];
+  analytics: DashboardAnalytics;
+  personas: PersonaItem[];
+  reports: ReportItem[];
+}> {
+  try {
+    // 1. Fetch simulation jobs, personas, and reports in parallel
+    const [simulations, personas, reports] = await Promise.all([
+      getUserSimulations(userId),
+      getUserPersonas(userId),
+      getUserReports(userId),
+    ]);
+
+    // 2. Calculate 100% REAL aggregated statistics
     const completed = simulations.filter((s) => s.status === "completed" && s.marketScore != null);
 
     const avgMarketFit =

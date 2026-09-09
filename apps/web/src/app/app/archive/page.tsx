@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { ArchiveWorkspaceView } from "@/components/AppWorkspaceViews";
-import { getUserDashboardData } from "@/lib/db";
+import { getUserSimulations } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ArchivePage() {
@@ -11,6 +11,6 @@ export default async function ArchivePage() {
 
   if (!user) redirect("/login");
 
-  const { simulations } = await getUserDashboardData(user.id);
+  const simulations = await getUserSimulations(user.id);
   return <ArchiveWorkspaceView simulations={simulations} />;
 }
