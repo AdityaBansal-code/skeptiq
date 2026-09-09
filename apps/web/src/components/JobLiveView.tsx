@@ -468,52 +468,42 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
               <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Queue State</span>
               <span className="mt-1 block font-mono text-sm font-bold text-zinc-800">
-                {job.status === "queued" ? `#${queueStatus?.queuePosition ?? 1} in queue` : "Active"}
+                {job.status === "queued" ? `#${queueStatus?.queuePosition ?? 1} in queue` : "Active in pipeline"}
               </span>
               <span className="text-[11px] text-zinc-500">
-                {queueStatus?.activeRunningCount ? `${queueStatus.activeRunningCount} running active` : "Processing"}
+                {queueStatus?.jobsAhead ? `${queueStatus.jobsAhead} simulation(s) ahead` : queueStatus?.activeRunningCount ? `${queueStatus.activeRunningCount} running active` : "Processing"}
               </span>
             </div>
 
             <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Est. Remaining</span>
-              <span className="mt-1 block font-mono text-sm font-bold text-blue-700">
-                ~{formatDuration(queueStatus?.estimatedSecondsRemaining ?? 60)}
-              </span>
-              <span className="text-[11px] text-zinc-500">
-                Total ~{formatDuration(queueStatus?.estimatedSecondsTotal ?? 75)}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Elapsed</span>
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Elapsed Time</span>
               <span className="mt-1 block font-mono text-sm font-bold text-zinc-800">
                 {formatDuration(queueStatus?.elapsedSeconds ?? 0)}
               </span>
               <span className="text-[11px] text-zinc-500">
-                {new Date(job.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} start
+                Started {new Date(job.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
 
             <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Worker Engine</span>
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Simulation Engine</span>
               <span className="mt-1 block font-mono text-xs font-bold">
                 {queueStatus?.workerStatus === "active" ? (
                   <span className="inline-flex items-center gap-1.5 text-emerald-700">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" /> Online
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" /> Online & Active
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-amber-700">
-                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" /> Booting
+                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" /> Booting / Standby
                   </span>
                 )}
               </span>
               <span className="text-[11px] text-zinc-500">
-                Render Free Tier
+                Background worker
               </span>
             </div>
           </div>
