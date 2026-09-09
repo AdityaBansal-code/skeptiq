@@ -293,6 +293,16 @@ export function startHealthServer(port = Number(process.env.WORKER_PORT || proce
     res.end(JSON.stringify({ error: "Not Found" }));
   });
 
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      logger.warn(`worker health server port ${port} is already in use by another instance — worker loop is continuing`, {
+        port,
+      });
+    } else {
+      logger.error("worker health server error", { error: err.message });
+    }
+  });
+
   server.listen(port, () => {
     logger.info(`worker health server listening on port ${port}`, {
       healthEndpoint: `http://localhost:${port}/health`,
