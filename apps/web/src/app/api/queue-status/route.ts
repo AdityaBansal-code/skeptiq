@@ -98,8 +98,9 @@ export async function GET(request: Request) {
       ? nowMs - new Date(latestHb).getTime() < 90_000
       : false;
 
-    // Trigger non-blocking wake-up if worker is asleep and job is queued
-    if (job.status === "queued" && workerUrl) {
+    // Trigger non-blocking wake-up if worker is asleep and job is queued or in-flight with stale worker
+    const isJobInFlight = job.status !== "completed" && job.status !== "failed";
+    if ((job.status === "queued" || (!isDbWorkerActive && isJobInFlight)) && workerUrl) {
       const cleanUrl = workerUrl.endsWith("/health")
         ? workerUrl
         : `${workerUrl.replace(/\/+$/, "")}/health`;
