@@ -5,16 +5,17 @@ import { logger } from "../logger.js";
 
 export const GROQ_MODELS = {
   REASONING: "openai/gpt-oss-120b",
-  FAST: "qwen/qwen3.8-27b",
+  FAST: "qwen/qwen3.6-27b",
   BACKUP_REASONING: "openai/gpt-oss-20b",
-  BACKUP_FAST: "qwen/qwen3.6-27b",
+  BACKUP_FAST: "openai/gpt-oss-120b",
 } as const;
 
 export const OPENROUTER_FREE_MODELS = [
   "openrouter/free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "meta-llama/llama-3.1-8b-instruct:free",
-  "mistralai/mistral-small-24b-instruct-2501:free",
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-3.5-lightning:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
 ] as const;
 
 let groqClient: Groq | null = null;
@@ -220,6 +221,19 @@ async function withRateLimitRetry<T>(
         errMsg.includes("rate_limit_exceeded") ||
         errMsg.includes("Rate limit reached") ||
         (err as { status?: number })?.status === 429;
+
+      const isDailyLimit =
+        errMsg.includes("tokens per day") ||
+        errMsg.includes("TPD") ||
+        errMsg.includes("Need more tokens? Upgrade to Dev Tier");
+
+      if (isDailyLimit) {
+        logger.warn("Groq daily token limit (TPD) reached for model, failing over immediately to backup models", {
+          model: context.model,
+          operation: context.operationName,
+        });
+        throw err;
+      }
 
       // If rate limited and OpenRouter is available, try immediate failover to OpenRouter
       if (isRateLimit && context.openRouterFallback) {
