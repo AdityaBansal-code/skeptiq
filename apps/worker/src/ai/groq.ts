@@ -11,13 +11,13 @@ export const GROQ_MODELS = {
 } as const;
 
 export const OPENROUTER_FREE_MODELS = [
-  "liquid/lfm-2.5-2.6b:free",
-  "cohere/north-mini-code:free",
-  "nvidia/nemotron-3.5-lightning:free",
-  "google/gemma-4-31b-it:free",
-  "google/gemma-4-26b-a4b-it:free",
-  "nvidia/nemotron-3-ultra-550b-a55b:free",
   "openrouter/free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "meta-llama/llama-3.1-8b-instruct:free",
+  "google/gemini-2.0-flash-exp:free",
+  "mistralai/mistral-small-24b-instruct-2501:free",
+  "qwen/qwen-2.5-coder-32b-instruct:free",
+  "google/gemma-2-9b-it:free",
 ] as const;
 
 let groqClient: Groq | null = null;
@@ -157,7 +157,7 @@ export async function callOpenRouter(options: {
           ...(options.seed != null ? { seed: options.seed } : {}),
           ...(options.responseFormatJson ? { response_format: { type: "json_object" } } : {}),
         }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(6000),
       });
 
       if (!res.ok) {
