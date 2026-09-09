@@ -110,7 +110,7 @@ export const personaGenerationResultSchema: z.ZodType<
   z.ZodTypeDef,
   unknown
 > = z.object({
-  personas: z.array(personaProfileSchema).min(3).max(30),
+  personas: z.array(personaProfileSchema).min(1).max(50),
 });
 
 export const personaStatusSchema = z.enum(["pending", "reacted", "failed"]);

@@ -194,7 +194,47 @@ Generate exactly ${panelSize} realistic, highly relevant personas strictly from 
     tracker: options?.tracker,
   });
 
-  const personasToInsert = result.personas.slice(0, panelSize);
+  const allPersonas: PersonaProfile[] = [...result.personas];
+
+  // If the model produced fewer personas than requested panelSize, backfill in a targeted pass
+  let attempts = 0;
+  while (allPersonas.length < panelSize && attempts < 2) {
+    attempts++;
+    const needed = panelSize - allPersonas.length;
+    logger.info("backfilling missing personas to guarantee exact panelSize", {
+      jobId,
+      requested: panelSize,
+      current: allPersonas.length,
+      needed,
+      attempt: attempts,
+    });
+
+    const existingNames = allPersonas.map((p) => `${p.name} (${p.archetype})`).join(", ");
+    try {
+      const backfillResult = await jsonCompletion({
+        model: GROQ_MODELS.REASONING,
+        messages: [
+          { role: "system", content: systemMessage },
+          {
+            role: "user",
+            content: `Here is the product idea:\n"""\n${ideaText}\n"""\n\nExisting panel members already created:\n${existingNames}\n\nPlease generate exactly ${needed} MORE distinct, non-overlapping personas from the "${presetConfig.label}" cohort to complete the full panel of ${panelSize}.`,
+          },
+        ],
+        schema: personaGenerationResultSchema,
+        temperature: 0.8,
+        tracker: options?.tracker,
+      });
+
+      if (backfillResult.personas && backfillResult.personas.length > 0) {
+        allPersonas.push(...backfillResult.personas);
+      }
+    } catch (backfillErr) {
+      logger.warn("backfill pass notice", { error: String(backfillErr) });
+      break;
+    }
+  }
+
+  const personasToInsert = allPersonas.slice(0, panelSize);
   if (personasToInsert.length === 0) {
     throw new Error(`No personas generated for job ${jobId}`);
   }
