@@ -61,14 +61,40 @@ export interface PersonaRow {
 
 const STEPS = ["queued", ...PIPELINE_PHASES] as const;
 
-const LABELS: Record<(typeof STEPS)[number], string> = {
+const LABELS: Record<JobStatus, string> = {
   queued: "Queued",
   generating_personas: "Personas",
   independent_phase: "Independent",
   clustering: "Clustering",
   crosstalk_phase: "Cross-Talk",
   synthesizing: "Synthesis",
+  completed: "Completed",
+  failed: "Failed",
 };
+
+interface QueueStatusData {
+  jobId: string;
+  status: string;
+  queuePosition: number;
+  jobsAhead: number;
+  activeRunningCount: number;
+  estimatedSecondsTotal: number;
+  estimatedSecondsRemaining: number;
+  elapsedSeconds: number;
+  panelSize: number;
+  rounds: number;
+  workerStatus: "active" | "standby";
+  hasWorkerUrlConfigured: boolean;
+}
+
+function formatDuration(sec: number): string {
+  if (sec <= 0) return "0s";
+  const mins = Math.floor(sec / 60);
+  const remSec = sec % 60;
+  if (mins === 0) return `${remSec}s`;
+  if (remSec === 0) return `${mins}m`;
+  return `${mins}m ${remSec}s`;
+}
 
 export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; ideaText?: string }) {
   const [job, setJob] = useState<JobRow>(initialJob);
@@ -77,6 +103,11 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
   const [report, setReport] = useState<ReportSummary | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [activeTab, setActiveTab] = useState<"dossier" | "dialogue" | "chat" | "personas">("dossier");
+
+  // Queue & Duration estimation state
+  const [queueStatus, setQueueStatus] = useState<QueueStatusData | null>(null);
+  const [wakingWorker, setWakingWorker] = useState(false);
+  const [wakeMessage, setWakeMessage] = useState<string | null>(null);
 
   // Filters for Dialogue Tab
   const [dialoguePhaseFilter, setDialoguePhaseFilter] = useState<"all" | "independent" | "crosstalk">("all");
@@ -234,6 +265,40 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
     return () => clearInterval(interval);
   }, [job.id, job.status, report, personas.size]);
 
+  // 3. Queue status & Estimated duration polling
+  useEffect(() => {
+    if (isTerminal(job.status)) return;
+    async function fetchQueueStatus() {
+      try {
+        const res = await fetch(`/api/queue-status?jobId=${job.id}`);
+        if (res.ok) {
+          const data = (await res.json()) as QueueStatusData;
+          setQueueStatus(data);
+        }
+      } catch {
+        // Ignore network hiccups
+      }
+    }
+    void fetchQueueStatus();
+    const qInterval = setInterval(fetchQueueStatus, 3000);
+    return () => clearInterval(qInterval);
+  }, [job.id, job.status]);
+
+  async function handleWakeWorker() {
+    setWakingWorker(true);
+    setWakeMessage(null);
+    try {
+      const res = await fetch("/api/wake", { method: "POST" });
+      const data = await res.json();
+      setWakeMessage(data.message || (data.ok ? "Worker active!" : "Wake-up ping dispatched."));
+    } catch {
+      setWakeMessage("Ping dispatched to worker engine.");
+    } finally {
+      setWakingWorker(false);
+      setTimeout(() => setWakeMessage(null), 6000);
+    }
+  }
+
   async function handleCancel() {
     if (!confirm("Are you sure you want to stop this simulation?")) return;
     setCancelling(true);
@@ -358,6 +423,102 @@ export function JobLiveView({ initialJob, ideaText }: { initialJob: JobRow; idea
           </div>
         )}
       </div>
+
+      {/* 1.5 Live Queue & Estimated Time Card */}
+      {!terminal && (
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-3.5">
+            <div className="flex items-center gap-2.5">
+              {job.status === "queued" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-200">
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
+                  Queue Position: #{queueStatus?.queuePosition ?? 1}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800 border border-blue-200">
+                  <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+                  Live Engine: {LABELS[job.status] || job.status}
+                </span>
+              )}
+              <span className="text-xs text-zinc-500 hidden sm:inline">
+                {job.status === "queued"
+                  ? queueStatus?.jobsAhead === 0
+                    ? "Next in line — simulation worker is picking up this job"
+                    : `${queueStatus?.jobsAhead} job(s) ahead in line`
+                  : "Synthesizing collective cognitive deliberation"}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {wakeMessage && (
+                <span className="text-[11px] font-medium text-emerald-600 animate-fade-in bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                  {wakeMessage}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleWakeWorker}
+                disabled={wakingWorker}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 hover:border-zinc-300 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+                title="Ping the background simulation worker to ensure it is awake on Render"
+              >
+                <span className={wakingWorker ? "animate-spin" : ""}>⚡</span>
+                <span>{wakingWorker ? "Pinging Engine…" : "Wake Engine"}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Queue State</span>
+              <span className="mt-1 block font-mono text-sm font-bold text-zinc-800">
+                {job.status === "queued" ? `#${queueStatus?.queuePosition ?? 1} in queue` : "Active"}
+              </span>
+              <span className="text-[11px] text-zinc-500">
+                {queueStatus?.activeRunningCount ? `${queueStatus.activeRunningCount} running active` : "Processing"}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Est. Remaining</span>
+              <span className="mt-1 block font-mono text-sm font-bold text-blue-700">
+                ~{formatDuration(queueStatus?.estimatedSecondsRemaining ?? 60)}
+              </span>
+              <span className="text-[11px] text-zinc-500">
+                Total ~{formatDuration(queueStatus?.estimatedSecondsTotal ?? 75)}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Elapsed</span>
+              <span className="mt-1 block font-mono text-sm font-bold text-zinc-800">
+                {formatDuration(queueStatus?.elapsedSeconds ?? 0)}
+              </span>
+              <span className="text-[11px] text-zinc-500">
+                {new Date(job.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} start
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Worker Engine</span>
+              <span className="mt-1 block font-mono text-xs font-bold">
+                {queueStatus?.workerStatus === "active" ? (
+                  <span className="inline-flex items-center gap-1.5 text-emerald-700">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" /> Online
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-amber-700">
+                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" /> Booting
+                  </span>
+                )}
+              </span>
+              <span className="text-[11px] text-zinc-500">
+                Render Free Tier
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. Pipeline Execution Stepper */}
       <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-3">
