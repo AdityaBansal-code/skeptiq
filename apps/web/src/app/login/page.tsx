@@ -5,8 +5,23 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { brandConfig } from "@/lib/brand";
 
+function formatAuthErrorMessage(msg: string | null): string | null {
+  if (!msg) return null;
+  if (msg.includes("PKCE") || msg.includes("code verifier")) {
+    return "This magic link was opened in a different browser or has expired. Please sign in with your password below, or request a new magic link in this browser.";
+  }
+  if (msg.includes("Invalid login credentials")) {
+    return "Incorrect email or password. Please verify your credentials and try again.";
+  }
+  if (msg.includes("Email not confirmed")) {
+    return "Please confirm your email address before signing in.";
+  }
+  return msg;
+}
+
 function LoginForm() {
-  const urlError = useSearchParams().get("error");
+  const rawUrlError = useSearchParams().get("error");
+  const urlError = formatAuthErrorMessage(rawUrlError);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"password" | "magic_link">("password");
