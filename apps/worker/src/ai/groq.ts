@@ -14,10 +14,7 @@ export const OPENROUTER_FREE_MODELS = [
   "openrouter/free",
   "meta-llama/llama-3.3-70b-instruct:free",
   "meta-llama/llama-3.1-8b-instruct:free",
-  "google/gemini-2.0-flash-exp:free",
   "mistralai/mistral-small-24b-instruct-2501:free",
-  "qwen/qwen-2.5-coder-32b-instruct:free",
-  "google/gemma-2-9b-it:free",
 ] as const;
 
 let groqClient: Groq | null = null;

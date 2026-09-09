@@ -68,7 +68,7 @@ export async function claimNextJob(): Promise<ClaimedJob | null> {
     await client.query(
       `update simulation_jobs
           set status = 'generating_personas',
-              started_at = coalesce(started_at, now()),
+              started_at = now(),
               heartbeat_at = now(),
               attempt_count = coalesce(attempt_count, 0) + 1
         where id = $1`,
@@ -108,13 +108,14 @@ export async function reapStaleJobs(): Promise<number> {
     update simulation_jobs
        set status = case when attempt_count < 3 then 'queued' else 'failed' end,
            error = case when attempt_count >= 3 then 'Simulation timed out after 3 unhandled crash recovery attempts.' else error end,
-           completed_at = case when attempt_count >= 3 then now() else completed_at end
+           completed_at = case when attempt_count >= 3 then now() else completed_at end,
+           started_at = case when attempt_count < 3 then null else started_at end,
+           heartbeat_at = case when attempt_count < 3 then null else heartbeat_at end
      where status not in ('queued', 'completed', 'failed')
        and (
-         heartbeat_at is null
-         or heartbeat_at < now() - interval '2 minutes'
+         (heartbeat_at is null and (started_at is null or started_at < now() - interval '3 minutes'))
+         or heartbeat_at < now() - interval '4 minutes'
          or heartbeat_at > now() + interval '1 minute'
-         or (started_at is not null and started_at < now() - interval '120 minutes')
        )
   `);
   return rowCount ?? 0;
