@@ -7,6 +7,10 @@ import { brandConfig } from "@/lib/brand";
 
 function formatAuthErrorMessage(msg: string | null): string | null {
   if (!msg) return null;
+  const lower = msg.toLowerCase();
+  if (lower.includes("rate limit") || lower.includes("email rate limit") || lower.includes("over_email_send_rate_limit")) {
+    return "Supabase email rate limit reached (free tier allows ~3-4 emails/hour). Please switch to the Password tab above to sign in instantly without email.";
+  }
   if (msg.includes("PKCE") || msg.includes("code verifier")) {
     return "This magic link was opened in a different browser or has expired. Please sign in with your password below, or request a new magic link in this browser.";
   }
@@ -14,7 +18,7 @@ function formatAuthErrorMessage(msg: string | null): string | null {
     return "Incorrect email or password. Please verify your credentials and try again.";
   }
   if (msg.includes("Email not confirmed")) {
-    return "Please confirm your email address before signing in.";
+    return "Please confirm your email address before signing in, or use password login.";
   }
   return msg;
 }
@@ -47,7 +51,7 @@ function LoginForm() {
         });
         setPending(false);
         if (error) {
-          setError(error.message);
+          setError(formatAuthErrorMessage(error.message));
         } else if (data.session) {
           window.location.href = "/app";
         } else {
@@ -60,7 +64,7 @@ function LoginForm() {
         });
         setPending(false);
         if (error) {
-          setError(error.message);
+          setError(formatAuthErrorMessage(error.message));
         } else {
           window.location.href = "/app";
         }
@@ -72,7 +76,7 @@ function LoginForm() {
       });
       setPending(false);
       if (error) {
-        setError(error.message);
+        setError(formatAuthErrorMessage(error.message));
       } else {
         setSent(true);
       }
