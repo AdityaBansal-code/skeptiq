@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
 import { brandConfig } from "@/lib/brand";
 
 const workflow = [
@@ -19,7 +20,7 @@ const workflow = [
   },
 ];
 
-export function LandingPage() {
+export function LandingPage({ user }: { user?: User | null }) {
   return (
     <main className="min-h-screen overflow-hidden bg-paper text-ink">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
@@ -40,15 +41,31 @@ export function LandingPage() {
         </Link>
 
         <nav className="flex items-center gap-2 sm:gap-4" aria-label="Public navigation">
-          <Link className="px-2 py-2 text-sm font-medium text-muted-ink hover:text-ink" href="/login">
-            Sign in
-          </Link>
-          <Link
-            className="rounded-lg bg-coral px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-coral/85"
-            href="/login"
-          >
-            Start with an idea
-          </Link>
+          {user ? (
+            <>
+              <span className="hidden px-2 py-2 text-xs font-semibold text-muted-ink sm:inline max-w-48 truncate" title={user.email}>
+                {user.email}
+              </span>
+              <Link
+                className="rounded-lg bg-coral px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-coral/85 shadow-2xs"
+                href="/app"
+              >
+                Go to Dashboard →
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link className="px-2 py-2 text-sm font-medium text-muted-ink hover:text-ink" href="/login">
+                Sign in
+              </Link>
+              <Link
+                className="rounded-lg bg-coral px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-coral/85"
+                href="/login"
+              >
+                Start with an idea
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 
@@ -65,9 +82,9 @@ export function LandingPage() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               className="inline-flex justify-center rounded-lg bg-coral px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-coral/85"
-              href="/login"
+              href={user ? "/app/new" : "/login"}
             >
-              Start a simulation
+              {user ? "Start a simulation →" : "Start a simulation"}
             </Link>
             <a className="px-2 py-2 text-sm font-medium text-muted-ink hover:text-ink" href="#how-it-works">
               See how it works
@@ -135,9 +152,9 @@ export function LandingPage() {
           </div>
           <Link
             className="inline-flex justify-center rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
-            href="/login"
+            href={user ? "/app/new" : "/login"}
           >
-            Bring an idea
+            {user ? "Launch simulation →" : "Bring an idea"}
           </Link>
         </div>
       </section>
