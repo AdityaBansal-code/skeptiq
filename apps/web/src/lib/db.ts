@@ -11,9 +11,9 @@ export const pool =
   new pg.Pool({
     connectionString,
     ssl: isLocal ? false : { rejectUnauthorized: false },
-    max: process.env.NODE_ENV === "production" ? 3 : 2,
-    idleTimeoutMillis: 15_000,
-    connectionTimeoutMillis: 8_000,
+    max: 10,
+    idleTimeoutMillis: 20_000,
+    connectionTimeoutMillis: 10_000,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10_000,
     statement_timeout: 30_000,

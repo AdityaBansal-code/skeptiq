@@ -11,7 +11,7 @@ const isLocal = /@(localhost|127\.0\.0\.1|::1)[:/]/.test(env.DATABASE_URL);
 export const pool = new pg.Pool({
   connectionString: env.DATABASE_URL,
   ssl: isLocal ? false : { rejectUnauthorized: false },
-  max: 4,
+  max: 10,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,
   keepAlive: true,
