@@ -93,7 +93,7 @@ export function ReportsView({ reports, onOpenNewSimulation }: ReportsViewProps) 
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200/60">
-                        {report.overallAdoptionLow}% – {report.overallAdoptionHigh}% Adoption Range
+                        {report.overallAdoptionLow}% – {report.overallAdoptionHigh}% Simulated Interest
                       </span>
                       <span className="text-xs text-stone-400 font-medium">{formattedDate}</span>
                     </div>

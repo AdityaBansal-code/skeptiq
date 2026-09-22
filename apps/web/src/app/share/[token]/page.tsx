@@ -164,7 +164,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
                 <h2 className="text-xl sm:text-2xl font-black text-zinc-900 leading-snug">{report.headline}</h2>
               </div>
               <div className="rounded-2xl bg-zinc-900 px-6 py-3.5 text-white text-center sm:text-right min-w-[190px] shadow-sm shrink-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">Adoption Likelihood</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">Simulated Interest Range</span>
                 <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">
                   {report.overallAdoptionLow}% – {report.overallAdoptionHigh}%
                 </p>
@@ -287,7 +287,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
                       <div className="space-y-1 text-xs text-zinc-500 font-medium">
                         <div className="flex items-center justify-between">
                           <span>Share: <strong>{seg.sizePct}%</strong></span>
-                          <span>Likelihood: <strong className="text-zinc-800">{seg.adoptionLikelihoodLow}% – {seg.adoptionLikelihoodHigh}%</strong></span>
+                          <span>Simulated interest: <strong className="text-zinc-800">{seg.adoptionLikelihoodLow}% – {seg.adoptionLikelihoodHigh}%</strong></span>
                         </div>
                         <div className="h-1.5 w-full bg-zinc-200 rounded-full overflow-hidden">
                           <div

@@ -5,7 +5,7 @@ import { logger } from "../logger.js";
 
 export const GROQ_MODELS = {
   REASONING: "openai/gpt-oss-120b",
-  FAST: "qwen/qwen3.6-27b",
+  FAST: "qwen/qwen3.8-27b",
   BACKUP_REASONING: "openai/gpt-oss-20b",
   BACKUP_FAST: "openai/gpt-oss-120b",
 } as const;

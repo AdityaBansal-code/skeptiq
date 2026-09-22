@@ -193,7 +193,7 @@ export function SimulationsView({
                       <span>🔄 {sim.rounds} rounds</span>
                       {sim.marketScore != null && (
                         <span className="font-bold text-stone-800">
-                          🎯 Market Fit: {sim.marketScore}/100
+                          🎯 Simulated Interest: {sim.marketScore}/100
                         </span>
                       )}
                       {(sim.inputTokens > 0 || sim.outputTokens > 0) && (

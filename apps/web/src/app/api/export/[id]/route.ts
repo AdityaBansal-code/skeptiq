@@ -200,11 +200,11 @@ export async function GET(
     if (report) {
       md += `## 🎯 Executive Verdict\n\n`;
       md += `### ${report.headline}\n\n`;
-      md += `**Projected Market Adoption Rate:** \`${report.overallAdoptionLow}% – ${report.overallAdoptionHigh}%\`\n\n`;
+      md += `**Simulated Interest Range (uncalibrated):** \`${report.overallAdoptionLow}% – ${report.overallAdoptionHigh}%\`\n\n`;
 
       if (report.pivotDelta) {
         md += `### 🔄 A/B Pivot Sentiment Comparison\n\n`;
-        md += `**Adoption Shift:** \`${report.pivotDelta.deltaLow >= 0 ? `+${report.pivotDelta.deltaLow}%` : `${report.pivotDelta.deltaLow}%`} to ${report.pivotDelta.deltaHigh >= 0 ? `+${report.pivotDelta.deltaHigh}%` : `${report.pivotDelta.deltaHigh}%`}\`\n\n`;
+        md += `**Simulated Interest Shift:** \`${report.pivotDelta.deltaLow >= 0 ? `+${report.pivotDelta.deltaLow}%` : `${report.pivotDelta.deltaLow}%`} to ${report.pivotDelta.deltaHigh >= 0 ? `+${report.pivotDelta.deltaHigh}%` : `${report.pivotDelta.deltaHigh}%`}\`\n\n`;
         md += `> ${report.pivotDelta.verdictComparison}\n\n`;
 
         if (report.pivotDelta.resolvedObjections?.length) {
@@ -226,8 +226,8 @@ export async function GET(
 
       md += `### 👥 Market Segmentation (${report.segments.length} Cohorts)\n\n`;
       for (const seg of report.segments) {
-        md += `#### ${seg.label} (\`${seg.stance.toUpperCase()}\` · ${seg.sizePct}% of Market)\n`;
-        md += `- **Adoption Likelihood:** ${seg.adoptionLikelihoodLow}% – ${seg.adoptionLikelihoodHigh}%\n`;
+        md += `#### ${seg.label} (\`${seg.stance.toUpperCase()}\` · ${seg.sizePct}% of simulated panel)\n`;
+        md += `- **Simulated Interest Range:** ${seg.adoptionLikelihoodLow}% – ${seg.adoptionLikelihoodHigh}%\n`;
         md += `- **Key Objections & Dealbreakers:**\n`;
         for (const obj of seg.keyObjections) {
           md += `  - ${obj}\n`;

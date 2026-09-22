@@ -216,7 +216,7 @@ ${clusterReactions}`;
   const pivotBlock = parentReport
     ? `\nPREVIOUS RUN BENCHMARK (PARENT SIMULATION):
 - Previous Verdict: "${parentReport.headline}"
-- Previous Adoption Range: ${parentReport.overallAdoptionLow}% – ${parentReport.overallAdoptionHigh}%
+- Previous Simulated Interest Range: ${parentReport.overallAdoptionLow}% – ${parentReport.overallAdoptionHigh}%
 - Previous Major Dealbreakers: ${parentReport.crossCuttingObjections.join("; ")}
 Compare this new pivot pitch directly against the previous benchmark. Fill the "pivotDelta" field in the output JSON.\n`
     : "";
@@ -227,7 +227,7 @@ ${pivotBlock}
 SIMULATION MODE: "${mode.toUpperCase()}"
 
 CRITICAL METHODOLOGICAL RULES:
-1. Never collapse to a single vanity score. Provide realistic adoption likelihood ranges (low to high).
+1. Never collapse to a single vanity score. Numeric ranges are uncalibrated estimates from simulated personas, not measured adoption probabilities or forecasts. State this limitation in "caveats" and direct the user to real-user validation.
 2. Highlight honest friction: Identify dealbreakers, unit economic doubts, and structural barriers.
 3. Every segment must have adoptionLikelihoodLow <= adoptionLikelihoodHigh.
 4. overallAdoptionLow MUST be <= overallAdoptionHigh.

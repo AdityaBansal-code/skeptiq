@@ -176,7 +176,7 @@ Format your output in two parts:
 
     const dialogueHistory = getRecentDialogueContext(3);
     const competitorRef = marketContext?.topCompetitors?.length
-      ? `(Existing market tools in play: ${marketContext.topCompetitors.slice(0, 3).join(", ")})`
+      ? `(Possible related tools mentioned in unverified search snippets: ${marketContext.topCompetitors.slice(0, 3).join(", ")})`
       : "";
 
     const isConsensusMode = mode === "consensus";
@@ -238,7 +238,7 @@ Respond directly to what was just discussed in the room:
 
     const dialogueHistory = getRecentDialogueContext(3);
     const pricingClues = marketContext?.typicalPricingModels?.length
-      ? `(Common market pricing: ${marketContext.typicalPricingModels.slice(0, 2).join("; ")})`
+      ? `(Pricing leads from unverified search snippets: ${marketContext.typicalPricingModels.slice(0, 2).join("; ")})`
       : "";
 
     const isConsensusMode = mode === "consensus";

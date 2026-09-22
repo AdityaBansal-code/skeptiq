@@ -15,6 +15,7 @@ export const marketContextSchema = z.object({
   knownPainPoints: z.array(z.string()).default([]),
   existingSubstitutesSummary: z.string().default(""),
   sources: z.array(marketSourceSchema).default([]),
+  researchLimitations: z.string().default(""),
   isClonedFromParent: z.boolean().default(false),
 });
 
@@ -104,7 +105,7 @@ async function searchWebSnippets(query: string): Promise<string[]> {
       }
     }
   } catch {
-    // Fall back to parametric search
+    // No search evidence from this endpoint
   }
 
   return snippets;
@@ -112,29 +113,45 @@ async function searchWebSnippets(query: string): Promise<string[]> {
 
 /**
  * Executes Phase 0: Market Recon.
- * Gathers real competitors, pricing conventions, and existing substitutes.
+ * Gathers search leads about the problem and current workarounds when available.
  */
 export async function performMarketRecon(ideaText: string): Promise<MarketContext> {
-  const searchQuery = `${ideaText.slice(0, 80)} competitors alternatives pricing model`;
+  const searchQuery = `${ideaText.slice(0, 80)} problem current workaround alternatives`;
   logger.info("performing market recon", { searchQuery });
 
   const webSnippets = await searchWebSnippets(searchQuery);
 
-  const prompt = `You are a venture capital market research analyst conducting competitive reconnaissance.
+  const sources = webSnippets.map((snippet) => ({
+    query: searchQuery,
+    snippet,
+    retrievedAt: new Date().toISOString(),
+  }));
+
+  if (webSnippets.length === 0) {
+    return {
+      topCompetitors: [],
+      typicalPricingModels: [],
+      knownPainPoints: [],
+      existingSubstitutesSummary: "Current substitutes are unknown. Ask target users how they handle this problem today; any proposed workaround is a hypothesis, not a research finding.",
+      sources: [],
+      researchLimitations: "No live search evidence was retrieved. Competitors, prices, and customer complaints have not been verified.",
+      isClonedFromParent: false,
+    };
+  }
+
+  const prompt = `You are a market researcher identifying leads for later verification.
 Analyze this startup product idea:
 "${ideaText}"
 
-${
-  webSnippets.length > 0
-    ? `Recent web search snippets about this space:\n${webSnippets.map((s, i) => `[${i + 1}] ${s}`).join("\n")}`
-    : `(No live web snippets returned. Conduct an expert parametric competitive landscape evaluation using established industry benchmarks and incumbent products.)`
-}
+Search snippets (unverified excerpts, not complete source pages):
+${webSnippets.map((s, i) => `[${i + 1}] ${s}`).join("\n")}
 
-Identify:
-1. "topCompetitors": 3 to 5 real or direct competitors/incumbents in this space (e.g. Notion, Linear, Peloton, Jira, Zapier, etc.).
-2. "typicalPricingModels": 2 to 4 prevailing pricing structures (e.g. "$12/user/mo", "Freemium with usage tiers", "$299 upfront hardware").
-3. "knownPainPoints": 2 to 4 major known complaints users have with existing solutions.
-4. "existingSubstitutesSummary": 2-3 sentences explaining how potential customers currently solve this problem today without this new product.
+Identify only what the snippets support. A completely new idea may have no direct competitors.
+1. "topCompetitors": names explicitly present in the snippets and relevant to this problem. Use [] if none.
+2. "typicalPricingModels": pricing descriptions explicitly present in the snippets. Use [] if none.
+3. "knownPainPoints": complaints explicitly present in the snippets. Use [] if none.
+4. "existingSubstitutesSummary": explain any supported current workaround, or say it is unknown and needs user interviews.
+Do not invent companies, prices, complaints, quotes, or source URLs.
 
 Output strictly valid JSON matching this schema:
 {
@@ -151,24 +168,25 @@ Output strictly valid JSON matching this schema:
       schema: marketContextSchema,
       temperature: 0.3,
     });
-    result.sources = webSnippets.map((s) => ({
-      query: searchQuery,
-      snippet: s,
-      retrievedAt: new Date().toISOString(),
-    }));
+    const snippetText = webSnippets.join(" ").toLocaleLowerCase();
+    result.topCompetitors = result.topCompetitors.filter((name) =>
+      snippetText.includes(name.toLocaleLowerCase())
+    );
+    result.typicalPricingModels = result.typicalPricingModels.filter((price) =>
+      snippetText.includes(price.toLocaleLowerCase())
+    );
+    result.sources = sources;
+    result.researchLimitations = "Search snippets are unverified leads, not complete source pages. Confirm names, prices, and complaints before treating them as market facts.";
     return result;
   } catch (err) {
-    logger.warn("market recon synthesis failed, returning default context", { error: String(err) });
+    logger.warn("market recon synthesis failed, returning evidence-only context", { error: String(err) });
     return {
-      topCompetitors: ["Existing manual processes", "Generic spreadsheet tools"],
-      typicalPricingModels: ["Subscription ($10 - $50/mo)", "Ad-supported free tier"],
-      knownPainPoints: ["High manual effort", "Lack of specialized automation"],
-      existingSubstitutesSummary: "Customers currently piece together spreadsheets and manual workarounds.",
-      sources: webSnippets.map((s) => ({
-        query: searchQuery,
-        snippet: s,
-        retrievedAt: new Date().toISOString(),
-      })),
+      topCompetitors: [],
+      typicalPricingModels: [],
+      knownPainPoints: [],
+      existingSubstitutesSummary: "Current substitutes are unknown; ask target users how they solve this problem today.",
+      sources,
+      researchLimitations: "Search snippets were retrieved, but synthesis failed. No competitor, pricing, or complaint claims were verified.",
       isClonedFromParent: false,
     };
   }

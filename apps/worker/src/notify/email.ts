@@ -89,7 +89,7 @@ export async function notifyJobCompletion(options: {
           
           <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #e5e5e5; display: flex; justify-content: space-between;">
             <div>
-              <span style="font-size: 12px; color: #737373;">Adoption Likelihood Range</span>
+              <span style="font-size: 12px; color: #737373;">Simulated Interest Range</span>
               <p style="font-size: 18px; font-weight: 700; margin: 2px 0 0 0;">${options.report.overallAdoptionLow}% – ${options.report.overallAdoptionHigh}%</p>
             </div>
             <div>

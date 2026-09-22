@@ -289,7 +289,7 @@ export async function getUserDashboardData(userId: string): Promise<{
       getUserReports(userId),
     ]);
 
-    // 2. Calculate 100% REAL aggregated statistics
+    // Aggregate stored simulation outputs; these are not measured market outcomes.
     const completed = simulations.filter((s) => s.status === "completed" && s.marketScore != null);
 
     const avgMarketFit =
@@ -357,7 +357,7 @@ export async function getUserDashboardData(userId: string): Promise<{
     const pricePct = Math.round((priceCount / denom) * 100);
     const pragmaticPct = Math.max(0, 100 - earlyPct - skepticPct - pricePct);
 
-    // Sentiment based on real completed adoption rates
+    // Sentiment derived from completed simulation estimates.
     const positiveSentiment = avgMarketFit;
     const neutralSentiment = Math.min(30, Math.max(10, Math.round((avgAdoptionHigh - avgAdoptionLow) * 1.5)));
     const negativeSentiment = Math.max(0, 100 - positiveSentiment - neutralSentiment);

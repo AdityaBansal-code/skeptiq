@@ -166,10 +166,10 @@ export function DashboardView({
             {/* Top Content */}
             <div className="max-w-xl space-y-2 relative z-10">
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 leading-snug">
-                Understand how real customers might react before you build.
+                Explore how potential customers might react before you build.
               </h2>
               <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                Get AI-powered market research, customer personas, and realistic feedback — in hours, not months.
+                Explore ideas with AI personas, simulated feedback, and questions to validate with real customers.
               </p>
             </div>
 
@@ -317,7 +317,7 @@ export function DashboardView({
                                 <>
                                   <span>·</span>
                                   <span className="text-stone-700 font-semibold">
-                                    Market score {sim.marketScore}/100
+                                    Simulated interest {sim.marketScore}/100
                                   </span>
                                 </>
                               )}
@@ -381,7 +381,7 @@ export function DashboardView({
                       {analytics.avgAdoptionLow}% – {analytics.avgAdoptionHigh}% band
                     </span>
                   </div>
-                  <p className="text-[11px] text-stone-500 font-medium">Avg. Market Adoption</p>
+                  <p className="text-[11px] text-stone-500 font-medium">Avg. Simulated Interest</p>
                 </div>
               </div>
 
@@ -399,7 +399,7 @@ export function DashboardView({
                       across {analytics.completedCount} cohorts
                     </span>
                   </div>
-                  <p className="text-[11px] text-stone-500 font-medium">Personas Interviewed</p>
+                  <p className="text-[11px] text-stone-500 font-medium">Personas Simulated</p>
                 </div>
               </div>
 
@@ -433,12 +433,12 @@ export function DashboardView({
 
           {/* Customer Sentiment Card */}
           <div className="rounded-3xl border border-[#eee9e2] bg-white p-5 sm:p-6 shadow-xs space-y-3">
-            <h3 className="text-sm font-bold text-stone-900">Aggregated Persona Sentiment</h3>
+            <h3 className="text-sm font-bold text-stone-900">Simulated Persona Sentiment</h3>
 
             <div className="space-y-2.5 pt-1">
               <div>
                 <div className="flex justify-between text-[11px] font-semibold text-stone-600 mb-1">
-                  <span>Adoption / High Intent</span>
+                  <span>Simulated High Interest</span>
                   <span>{analytics.sentiment.positive}%</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">

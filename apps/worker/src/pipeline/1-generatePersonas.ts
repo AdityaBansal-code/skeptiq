@@ -132,11 +132,12 @@ export async function generatePersonas(
   await pool.query(`DELETE FROM personas WHERE job_id = $1`, [jobId]);
 
   const marketBlock = marketContext
-    ? `\nCOMPETITIVE MARKET REALITY:
-- Top competitors/incumbents in this space: ${marketContext.topCompetitors.join(", ")}
-- Prevailing pricing models: ${marketContext.typicalPricingModels.join(", ")}
-- How customers currently solve this: ${marketContext.existingSubstitutesSummary}
-Ensure personas use realistic industry-standard tools and workflows (e.g. Crunchbase, SEC filings, Google Alerts, Substack, GitHub, Notion, RSS feeds, specialized SaaS) rather than nonsensical combinations.\n`
+    ? `\nMARKET RESEARCH STATUS:
+- Possible related products mentioned in search snippets: ${marketContext.topCompetitors.join(", ") || "none found"}
+- Pricing mentioned in search snippets: ${marketContext.typicalPricingModels.join(", ") || "none found"}
+- Current substitutes: ${marketContext.existingSubstitutesSummary}
+- Evidence limits: ${marketContext.researchLimitations || "The available context has not been independently verified."}
+When the idea is novel, describe plausible current routines as hypotheses. Do not invent a direct competitor or claim a specific price is verified.\n`
     : "";
 
   const systemMessage = `You are a world-class market research methodologist.
