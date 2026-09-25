@@ -6,6 +6,7 @@ import type { PersonaRecord } from "./1-generatePersonas.js";
 import type { IndependentReaction } from "./2-independentReactions.js";
 import type { ClusterRecord } from "./3-clustering.js";
 import type { MarketContext } from "../ai/search.js";
+import { buildSpeakerContext, requestDialogueTurn } from "./dialogue-quality.js";
 
 export interface CrossTalkTurn {
   id: string;
@@ -26,7 +27,7 @@ export async function runCrossTalk(
     marketContext?: MarketContext;
     seed?: number | null;
     tracker?: TokenTracker;
-  }
+  },
 ): Promise<CrossTalkTurn[]> {
   const mode = options?.mode ?? "segmentation";
   const targetRounds = options?.targetRounds ?? 12;
@@ -44,21 +45,39 @@ export async function runCrossTalk(
   if (personas.length === 0) return [];
 
   const personaMap = new Map<string, PersonaRecord>(personas.map((p) => [p.id, p]));
+  const personaNames = new Map(personas.map((p) => [p.id, p.profile.name]));
   const turns: CrossTalkTurn[] = [];
+
+  async function generateTurn(speaker: PersonaRecord, prompt: string): Promise<string> {
+    return requestDialogueTurn((correction) =>
+      chatCompletion({
+        model: GROQ_MODELS.FAST,
+        messages: [
+          { role: "system", content: speaker.system_prompt },
+          { role: "user", content: prompt },
+          ...(correction ? [{ role: "user" as const, content: correction }] : []),
+        ],
+        temperature: 0.75,
+        maxTokens: 400,
+        seed: options?.seed,
+        tracker: options?.tracker,
+      }),
+    );
+  }
 
   // Helper to record a turn
   async function recordTurn(
     personaId: string,
     content: string,
     roundNumber: number,
-    respondingToTurnId?: string
+    respondingToTurnId?: string,
   ): Promise<CrossTalkTurn | null> {
     try {
       const { rows } = await pool.query<{ id: string }>(
         `INSERT INTO turns (job_id, persona_id, phase, round_number, content, responding_to_turn_id)
          VALUES ($1, $2, 'crosstalk', $3, $4, $5)
          RETURNING id`,
-        [jobId, personaId, roundNumber, content, respondingToTurnId ?? null]
+        [jobId, personaId, roundNumber, content, respondingToTurnId ?? null],
       );
       const inserted = rows[0];
       if (!inserted) return null;
@@ -92,25 +111,24 @@ CRITICAL CONVERSATIONAL RULES:
 - STRICTLY FORBIDDEN OPENERS: Never start your response with "Look...", "Honestly...", "I think you're missing the point...", "You're completely missing the point...", "Look, I get...", "My final stance is...", or "The #1 non-negotiable condition is...".
 - NO REPETITIVE SCRIPTS: Do NOT repeat the exact same tool or complaint you or others already mentioned. Advance the discussion with new details, trade-offs, or questions.
 - REAL HUMAN DYNAMICS: Talk like a real person in a live room. You can acknowledge good points made by others ("That's a fair point on citations...", "Wait, why would you need a CSV if..."), qualify your position, or ask practical questions.
+- IF YOU WOULD NOT BUY: Say so plainly. You do not need to invent a feature, price, or condition that would change your mind.
 - Length: 1 to 3 natural spoken sentences.`;
 
-  function getRecentDialogueContext(count = 3): string {
-    const recent = turns.slice(-count);
-    if (recent.length === 0) return "";
-    return `RECENT GROUP CONVERSATION:\n` +
-      recent
-        .map((t) => {
-          const p = personaMap.get(t.personaId);
-          // Strip internal monologue for the other participants' listening context
-          const cleanSpoken = t.content.replace(/💭\s*\*\([^)]+\)\*\s*/g, "").trim();
-          return `${p?.profile.name || "Participant"} (${p?.profile.archetype || "User"}): "${cleanSpoken}"`;
-        })
-        .join("\n");
+  function getSpeakerContext(speakerId: string): string {
+    return buildSpeakerContext({ speakerId, reactions, turns, personaNames });
   }
 
   // ── PHASE 1: Initial Discovery & Practical Probing ──────────────────────────
-  logger.info("starting crosstalk phase 1: practical probing", { jobId, targetTurns: openingTurnsTarget });
-  const openingTurns: { turnId: string; persona: PersonaRecord; clusterLabel: string; content: string }[] = [];
+  logger.info("starting crosstalk phase 1: practical probing", {
+    jobId,
+    targetTurns: openingTurnsTarget,
+  });
+  const openingTurns: {
+    turnId: string;
+    persona: PersonaRecord;
+    clusterLabel: string;
+    content: string;
+  }[] = [];
 
   for (let i = 0; i < openingTurnsTarget && turns.length < targetRounds; i++) {
     const cluster = clusters[i % clusters.length];
@@ -137,17 +155,7 @@ Format your output in two parts:
 "<Your 1-2 sentence spoken opening to the group, raising a practical question or specific concern.>"`;
 
     try {
-      const content = await chatCompletion({
-        model: GROQ_MODELS.FAST,
-        messages: [
-          { role: "system", content: speaker.system_prompt },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.75,
-        maxTokens: 250,
-        seed: options?.seed,
-        tracker: options?.tracker,
-      });
+      const content = await generateTurn(speaker, prompt);
 
       const turn = await recordTurn(speaker.id, content, currentRound++);
       if (turn) {
@@ -164,7 +172,10 @@ Format your output in two parts:
   }
 
   // ── PHASE 2: Causal Cross-Talk & Belief Updating ───────────────────────────
-  logger.info("starting crosstalk phase 2: active causal deliberation", { jobId, targetTurns: debateTurnsTarget });
+  logger.info("starting crosstalk phase 2: active causal deliberation", {
+    jobId,
+    targetTurns: debateTurnsTarget,
+  });
 
   for (let i = 0; i < debateTurnsTarget && turns.length < targetRounds; i++) {
     const lastTurn = turns[turns.length - 1];
@@ -174,7 +185,7 @@ Format your output in two parts:
     const responder = availablePersonas[i % (availablePersonas.length || 1)] || personas[0];
     if (!responder) continue;
 
-    const dialogueHistory = getRecentDialogueContext(3);
+    const dialogueHistory = getSpeakerContext(responder.id);
     const competitorRef = marketContext?.topCompetitors?.length
       ? `(Possible related tools mentioned in unverified search snippets: ${marketContext.topCompetitors.slice(0, 3).join(", ")})`
       : "";
@@ -209,17 +220,7 @@ Respond directly to what was just discussed in the room:
 - Advance the conversation naturally with new insight. Do NOT repeat yourself or use AI cliché openers.`;
 
     try {
-      const content = await chatCompletion({
-        model: GROQ_MODELS.FAST,
-        messages: [
-          { role: "system", content: responder.system_prompt },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.75,
-        maxTokens: 250,
-        seed: options?.seed,
-        tracker: options?.tracker,
-      });
+      const content = await generateTurn(responder, prompt);
 
       await recordTurn(responder.id, content, currentRound++, lastTurn?.id);
     } catch (err) {
@@ -228,7 +229,10 @@ Respond directly to what was just discussed in the room:
   }
 
   // ── PHASE 3: Pricing, Packaging & Substitution Realities ────────────────────
-  logger.info("starting crosstalk phase 3: packaging & economic reality check", { jobId, targetTurns: pricingTurnsTarget });
+  logger.info("starting crosstalk phase 3: packaging & economic reality check", {
+    jobId,
+    targetTurns: pricingTurnsTarget,
+  });
 
   for (let i = 0; i < pricingTurnsTarget && turns.length < targetRounds; i++) {
     const recentSpeakerIds = new Set(turns.slice(-2).map((t) => t.personaId));
@@ -236,7 +240,7 @@ Respond directly to what was just discussed in the room:
     const speaker = availablePersonas[(i + 1) % (availablePersonas.length || 1)] || personas[0];
     if (!speaker) continue;
 
-    const dialogueHistory = getRecentDialogueContext(3);
+    const dialogueHistory = getSpeakerContext(speaker.id);
     const pricingClues = marketContext?.typicalPricingModels?.length
       ? `(Pricing leads from unverified search snippets: ${marketContext.typicalPricingModels.slice(0, 2).join("; ")})`
       : "";
@@ -266,20 +270,11 @@ ${ANTI_CLICHE_RULES}
 
 Weigh in on the business model and economics:
 - What packaging or pricing structure (e.g., ad-supported/free tier, low monthly subscription, sponsor-backed, usage-based, or pay-per-report) would actually fit your budget or make sense for this?
+- If you would not buy this at any price, say that instead of proposing a pricing model.
 - Compare that to what you currently tolerate or spend on existing alternatives. Keep it realistic and conversational.`;
 
     try {
-      const content = await chatCompletion({
-        model: GROQ_MODELS.FAST,
-        messages: [
-          { role: "system", content: speaker.system_prompt },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.75,
-        maxTokens: 250,
-        seed: options?.seed,
-        tracker: options?.tracker,
-      });
+      const content = await generateTurn(speaker, prompt);
 
       await recordTurn(speaker.id, content, currentRound++);
     } catch (err) {
@@ -288,15 +283,19 @@ Weigh in on the business model and economics:
   }
 
   // ── PHASE 4: Grounded Conclusions & Nuanced Takeaways ───────────────────────
-  logger.info("starting crosstalk phase 4: grounded takeaways", { jobId, targetTurns: verdictTurnsTarget });
+  logger.info("starting crosstalk phase 4: grounded takeaways", {
+    jobId,
+    targetTurns: verdictTurnsTarget,
+  });
 
   for (let i = 0; i < verdictTurnsTarget && turns.length < targetRounds; i++) {
     const recentSpeakerIds = new Set(turns.slice(-1).map((t) => t.personaId));
     const candidatePersonas = personas.filter((p) => !recentSpeakerIds.has(p.id));
-    const speaker = candidatePersonas[i % (candidatePersonas.length || 1)] || personas[i % personas.length];
+    const speaker =
+      candidatePersonas[i % (candidatePersonas.length || 1)] || personas[i % personas.length];
     if (!speaker) continue;
 
-    const dialogueHistory = getRecentDialogueContext(3);
+    const dialogueHistory = getSpeakerContext(speaker.id);
     const isConsensusMode = mode === "consensus";
     const prompt = isConsensusMode
       ? `The Delphi consensus deliberation is wrapping up. Deliver your final alignment stance to the panel:
@@ -325,17 +324,7 @@ Share your natural closing perspective with the group:
 - Speak naturally and casually without saying "In conclusion" or "My final stance is...".`;
 
     try {
-      const content = await chatCompletion({
-        model: GROQ_MODELS.FAST,
-        messages: [
-          { role: "system", content: speaker.system_prompt },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.75,
-        maxTokens: 250,
-        seed: options?.seed,
-        tracker: options?.tracker,
-      });
+      const content = await generateTurn(speaker, prompt);
 
       await recordTurn(speaker.id, content, currentRound++);
     } catch (err) {

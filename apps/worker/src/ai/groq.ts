@@ -2,6 +2,7 @@ import Groq from "groq-sdk";
 import type { z } from "zod";
 import { env } from "../env.js";
 import { logger } from "../logger.js";
+import { requireFinishedText } from "./completion-quality.js";
 
 export const GROQ_MODELS = {
   REASONING: "openai/gpt-oss-120b",
@@ -23,7 +24,7 @@ let groqClient: Groq | null = null;
 export function getGroqClient(): Groq {
   if (!env.GROQ_API_KEY) {
     throw new Error(
-      "Missing GROQ_API_KEY. Please add GROQ_API_KEY=gsk_... to apps/worker/.env (free at https://console.groq.com)."
+      "Missing GROQ_API_KEY. Please add GROQ_API_KEY=gsk_... to apps/worker/.env (free at https://console.groq.com).",
     );
   }
   if (!groqClient) {
@@ -166,7 +167,9 @@ export async function callOpenRouter(options: {
       const data = (await res.json()) as any;
       const rawContent = data.choices?.[0]?.message?.content;
       if (rawContent && typeof rawContent === "string") {
-        const content = options.responseFormatJson ? extractJsonFromText(rawContent) : rawContent;
+        const content = options.responseFormatJson
+          ? extractJsonFromText(rawContent)
+          : requireFinishedText(rawContent, data.choices?.[0]?.finish_reason);
         if (options.responseFormatJson) {
           try {
             JSON.parse(content);
@@ -207,7 +210,7 @@ async function withRateLimitRetry<T>(
     model: string;
     operationName: string;
     openRouterFallback?: () => Promise<T | null>;
-  }
+  },
 ): Promise<T> {
   const maxRetries = 3;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -228,10 +231,13 @@ async function withRateLimitRetry<T>(
         errMsg.includes("Need more tokens? Upgrade to Dev Tier");
 
       if (isDailyLimit) {
-        logger.warn("Groq daily token limit (TPD) reached for model, failing over immediately to backup models", {
-          model: context.model,
-          operation: context.operationName,
-        });
+        logger.warn(
+          "Groq daily token limit (TPD) reached for model, failing over immediately to backup models",
+          {
+            model: context.model,
+            operation: context.operationName,
+          },
+        );
         throw err;
       }
 
@@ -331,9 +337,9 @@ export async function chatCompletion(options: {
           if (!content) {
             throw new Error(`Empty response returned from Groq model: ${model}`);
           }
-          return content;
+          return requireFinishedText(content, response.choices[0]?.finish_reason);
         },
-        { model, operationName: "chatCompletion", openRouterFallback }
+        { model, operationName: "chatCompletion", openRouterFallback },
       );
     } catch (err) {
       logger.warn("model attempt failed in chatCompletion, trying next", {
@@ -427,7 +433,7 @@ export async function jsonCompletion<T>(options: {
           const parsed = JSON.parse(cleanJson);
           return options.schema.parse(parsed);
         },
-        { model, operationName: "jsonCompletion", openRouterFallback }
+        { model, operationName: "jsonCompletion", openRouterFallback },
       );
     } catch (err) {
       logger.warn("jsonCompletion model attempt failed, trying backup", {
@@ -443,5 +449,7 @@ export async function jsonCompletion<T>(options: {
     return openRouterResult;
   }
 
-  throw new Error("Failed to produce valid JSON from completion across available models and providers");
+  throw new Error(
+    "Failed to produce valid JSON from completion across available models and providers",
+  );
 }
