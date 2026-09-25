@@ -1,9 +1,8 @@
 import { z } from "zod";
 
 /**
- * Shape of reports.summary_json. The design rule from the research doc:
- * never collapse to a single score — always report a distribution and a range.
- * See ai-validation-platform-plan.md §3 and full-system-architecture.md §4.
+ * Shape of reports.summary_json. Never collapse the simulated panel to a
+ * single score: report a distribution and a range.
  */
 export const segmentStanceSchema = z.enum(["adopt", "conditional", "reject"]);
 export type SegmentStance = z.infer<typeof segmentStanceSchema>;
@@ -34,34 +33,37 @@ export function sanitizeRange(low: unknown, high: unknown): { low: number; high:
   };
 }
 
-export const reportSegmentSchema = z.preprocess((val) => {
-  if (val && typeof val === "object") {
-    const raw = val as Record<string, unknown>;
-    const { low, high } = sanitizeRange(raw.adoptionLikelihoodLow, raw.adoptionLikelihoodHigh);
-    return {
-      ...raw,
-      adoptionLikelihoodLow: low,
-      adoptionLikelihoodHigh: high,
-      sizePct: Math.max(0, Math.min(100, Number(raw.sizePct) || 0)),
-    };
-  }
-  return val;
-}, z
-  .object({
-    label: z.string().min(1),
-    /** Share of the panel in this segment; segment sizes should sum to ~100. */
-    sizePct: z.number().min(0).max(100),
-    stance: segmentStanceSchema,
-    adoptionLikelihoodLow: z.number().min(0).max(100),
-    adoptionLikelihoodHigh: z.number().min(0).max(100),
-    keyObjections: z.array(z.string().min(1)).default([]),
-    conditions: z.array(z.string().min(1)).default([]),
-    notableQuotes: z.array(z.string().min(1)).default([]),
-  })
-  .refine((s) => s.adoptionLikelihoodLow <= s.adoptionLikelihoodHigh, {
-    message: "adoptionLikelihoodLow must be <= adoptionLikelihoodHigh",
-    path: ["adoptionLikelihoodLow"],
-  }));
+export const reportSegmentSchema = z.preprocess(
+  (val) => {
+    if (val && typeof val === "object") {
+      const raw = val as Record<string, unknown>;
+      const { low, high } = sanitizeRange(raw.adoptionLikelihoodLow, raw.adoptionLikelihoodHigh);
+      return {
+        ...raw,
+        adoptionLikelihoodLow: low,
+        adoptionLikelihoodHigh: high,
+        sizePct: Math.max(0, Math.min(100, Number(raw.sizePct) || 0)),
+      };
+    }
+    return val;
+  },
+  z
+    .object({
+      label: z.string().min(1),
+      /** Share of the panel in this segment; segment sizes should sum to ~100. */
+      sizePct: z.number().min(0).max(100),
+      stance: segmentStanceSchema,
+      adoptionLikelihoodLow: z.number().min(0).max(100),
+      adoptionLikelihoodHigh: z.number().min(0).max(100),
+      keyObjections: z.array(z.string().min(1)).default([]),
+      conditions: z.array(z.string().min(1)).default([]),
+      notableQuotes: z.array(z.string().min(1)).default([]),
+    })
+    .refine((s) => s.adoptionLikelihoodLow <= s.adoptionLikelihoodHigh, {
+      message: "adoptionLikelihoodLow must be <= adoptionLikelihoodHigh",
+      path: ["adoptionLikelihoodLow"],
+    }),
+);
 
 export type ReportSegment = z.infer<typeof reportSegmentSchema>;
 
@@ -86,7 +88,12 @@ export const consensusMetricsSchema = z.object({
   universalAgreements: z.array(z.string().min(1)).default([]),
   unresolvedContestations: z.array(z.string().min(1)).default([]),
   keyCompromisesRequired: z.array(z.string().min(1)).default([]),
-  finalGroupStance: z.enum(["strong_consensus", "conditional_compromise", "divided_stalemate", "universal_rejection"]),
+  finalGroupStance: z.enum([
+    "strong_consensus",
+    "conditional_compromise",
+    "divided_stalemate",
+    "universal_rejection",
+  ]),
 });
 export type ConsensusMetrics = z.infer<typeof consensusMetricsSchema>;
 
@@ -114,41 +121,42 @@ export const evidenceClaimSchema = z.object({
 });
 export type EvidenceClaim = z.infer<typeof evidenceClaimSchema>;
 
-export const reportSummarySchema = z.preprocess((val) => {
-  if (val && typeof val === "object") {
-    const raw = val as Record<string, unknown>;
-    const { low, high } = sanitizeRange(raw.overallAdoptionLow, raw.overallAdoptionHigh);
-    return {
-      ...raw,
-      overallAdoptionLow: low,
-      overallAdoptionHigh: high,
-      panelSizeEffective: Math.max(1, Number(raw.panelSizeEffective) || 1),
-    };
-  }
-  return val;
-}, z
-  .object({
-    /** One line. Explicitly a distribution statement, not "scores 80%". */
-    headline: z.string().min(1),
-    segments: z.array(reportSegmentSchema).default([]),
-    crossCuttingObjections: z.array(z.string().min(1)).default([]),
-    overallAdoptionLow: z.number().min(0).max(100),
-    overallAdoptionHigh: z.number().min(0).max(100),
-    /** Effective panel size after any persona dropouts (partial-panel handling). */
-    panelSizeEffective: z.number().int().min(1),
-    caveats: z.array(z.string().min(1)).default([]),
-    pivotDelta: pivotDeltaSchema.optional(),
-    priceSensitivity: priceSensitivitySchema.optional(),
-    cognitiveBiasesEncountered: z.array(z.string().min(1)).default([]),
-    consensusMetrics: consensusMetricsSchema.optional(),
-    actionPlan: actionPlanSchema.optional(),
-    evidenceClaims: z.array(evidenceClaimSchema).default([]),
-  })
-  .refine((r) => r.overallAdoptionLow <= r.overallAdoptionHigh, {
-    message: "overallAdoptionLow must be <= overallAdoptionHigh",
-    path: ["overallAdoptionLow"],
-  }));
+export const reportSummarySchema = z.preprocess(
+  (val) => {
+    if (val && typeof val === "object") {
+      const raw = val as Record<string, unknown>;
+      const { low, high } = sanitizeRange(raw.overallAdoptionLow, raw.overallAdoptionHigh);
+      return {
+        ...raw,
+        overallAdoptionLow: low,
+        overallAdoptionHigh: high,
+        panelSizeEffective: Math.max(1, Number(raw.panelSizeEffective) || 1),
+      };
+    }
+    return val;
+  },
+  z
+    .object({
+      /** One line. Explicitly a distribution statement, not "scores 80%". */
+      headline: z.string().min(1),
+      segments: z.array(reportSegmentSchema).default([]),
+      crossCuttingObjections: z.array(z.string().min(1)).default([]),
+      overallAdoptionLow: z.number().min(0).max(100),
+      overallAdoptionHigh: z.number().min(0).max(100),
+      /** Effective panel size after any persona dropouts (partial-panel handling). */
+      panelSizeEffective: z.number().int().min(1),
+      caveats: z.array(z.string().min(1)).default([]),
+      pivotDelta: pivotDeltaSchema.optional(),
+      priceSensitivity: priceSensitivitySchema.optional(),
+      cognitiveBiasesEncountered: z.array(z.string().min(1)).default([]),
+      consensusMetrics: consensusMetricsSchema.optional(),
+      actionPlan: actionPlanSchema.optional(),
+      evidenceClaims: z.array(evidenceClaimSchema).default([]),
+    })
+    .refine((r) => r.overallAdoptionLow <= r.overallAdoptionHigh, {
+      message: "overallAdoptionLow must be <= overallAdoptionHigh",
+      path: ["overallAdoptionLow"],
+    }),
+);
 
 export type ReportSummary = z.infer<typeof reportSummarySchema>;
-
-

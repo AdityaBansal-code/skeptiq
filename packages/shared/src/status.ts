@@ -2,12 +2,11 @@ import { z } from "zod";
 
 /**
  * Granular job status. Deliberately 8 states, not queued/running/done:
- * the live UI needs to render *which phase* a 15-20 min run is in.
- * See full-system-architecture.md §6.
+ * the live UI needs to render which phase a long-running simulation is in.
  *
  * This is the single source of truth for the status vocabulary. The SQL
- * CHECK constraint in supabase/migrations mirrors this list by hand
- * (SQL cannot import TS) — keep the two in sync; see docs/decision-log.md D9.
+ * CHECK constraint in supabase/migrations mirrors this list by hand, because
+ * SQL cannot import TypeScript. Keep the two definitions in sync.
  */
 export const jobStatusSchema = z.enum([
   "queued",
@@ -24,7 +23,10 @@ export type JobStatus = z.infer<typeof jobStatusSchema>;
 
 export const JOB_STATUSES = jobStatusSchema.options;
 
-export const TERMINAL_JOB_STATUSES = ["completed", "failed"] as const satisfies readonly JobStatus[];
+export const TERMINAL_JOB_STATUSES = [
+  "completed",
+  "failed",
+] as const satisfies readonly JobStatus[];
 
 export function isTerminal(status: JobStatus): boolean {
   return (TERMINAL_JOB_STATUSES as readonly JobStatus[]).includes(status);

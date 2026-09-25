@@ -1,7 +1,6 @@
 -- 20260907120000_init
 -- Core schema for the AI idea-validation platform.
--- Mirrors full-system-architecture.md §6 (data model), §8 (auth/RLS), §9 (cost logging).
--- Rationale for individual choices lives in docs/decision-log.md (D5–D10).
+-- Defines the core data model, authentication policies, and token accounting.
 
 -- ── Extensions ───────────────────────────────────────────────────────────────
 create extension if not exists pgcrypto;   -- gen_random_uuid()

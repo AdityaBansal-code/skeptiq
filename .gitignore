@@ -28,3 +28,8 @@ pnpm-debug.log*
 # supabase local
 supabase/.branches/
 supabase/.temp/
+
+# repository-local planning and scratch artifacts
+.superpowers/
+docs/
+scratch/
