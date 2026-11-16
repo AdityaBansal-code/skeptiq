@@ -49,7 +49,7 @@ Idea + configuration
 Report, export, sharing, follow-up Q&A, and notifications
 ```
 
-Each stage is checkpointed. The worker records heartbeats, retries transient stage failures, cleans partial stage artifacts before a retry, tracks token usage, and checks for cancellation. A stale-job reaper can reclaim interrupted work after the worker restarts.
+After each stage the worker records a progress checkpoint on the job row (used to show progress). Checkpoints are not currently read back for recovery: a job that is re-queued after a crash restarts from the first stage rather than resuming. The worker records heartbeats, retries transient stage failures, cleans partial stage artifacts before a retry, tracks token usage, and checks for cancellation. A stale-job reaper can reclaim interrupted work after the worker restarts.
 
 ### Simulation controls
 
